@@ -627,6 +627,60 @@ html.force-light .tab.active{ color:#0b0d12 !important; font-weight:600; }
     margin-left: auto;
     margin-right: auto;
   }
+
+/* === Dark mode tweaks === */
+@media (prefers-color-scheme: dark) {
+  /* Increase contrast only in dark mode for the previous-day button */
+  button[id*="prev" i],
+  button[class*="prev" i],
+  .btn-prev, #prev, #prevDay {
+    background-color: #1f2430 !important;
+    color: #ffffff !important;
+    border: 1px solid #ffffff !important;
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.08), 0 6px 16px rgba(0,0,0,0.5) !important;
+  }
+  /* Hover/focus states for accessibility */
+  button[id*="prev" i]:hover,
+  button[class*="prev" i]:hover,
+  .btn-prev:hover, #prev:hover, #prevDay:hover,
+  button[id*="prev" i]:focus-visible,
+  button[class*="prev" i]:focus-visible,
+  .btn-prev:focus-visible, #prev:focus-visible, #prevDay:focus-visible {
+    outline: 2px solid #fff !important;
+    outline-offset: 2px !important;
+    filter: brightness(1.08);
+  }
+}
+
+
+/* === Prevent layout shift on day navigation === */
+[class*="day" i][class*="button" i],
+[id*="day" i][id*="button" i],
+[class*="buttons" i][class*="day" i],
+#days, .days, .day-buttons, .days-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px; /* reserve space to avoid jumps */
+}
+
+#days button, .days button, .day-buttons button, .days-bar button,
+button[id*="day" i], button[class*="day" i] {
+  min-width: 44px;
+  padding: 10px 12px;
+  line-height: 1.1;
+  font-weight: 600;
+  border-width: 1px; /* same in active/normal to avoid expansion */
+}
+
+/* Ensure active/selected states don't change sizing */
+#days button.active, .days button.active, .day-buttons button.active,
+button[id*="day" i].active, button[class*="day" i].active {
+  font-weight: 600;
+  border-width: 1px;
+}
+
 </style>
     
 
