@@ -1670,12 +1670,105 @@ body {
   state.xp = state.xp || 0;
   state.badges = state.badges || {}; // {id:true}
 
-  const BADGE_RULES = [
-    {id:'streak7', label:'7 jours d\'affilée', test:(s)=> (s.totals?.streak||0) >= 7},
-    {id:'reps1k', label:'1000 pompes (Push-ups)', test:(s)=> (s.totals?.reps||0) >= 1000},
-    {id:'sessions10', label:'10 séances', test:(s)=> (s.totals?.sessions||0) >= 10},
-    {id:'time10h', label:'10 h d\'entraînement', test:(s)=> (s.totals?.time||0) >= 36000}
+  
+  // ===== Revamped Achievements: tiered badges with progress & animations =====
+  const ACHIEVEMENTS = [
+    { key:'pompes', icon:'💪', name:'Pompes', tiers:[
+      {id:'pompes_bronze', tier:'bronze', threshold:500},
+      {id:'pompes_silver', tier:'silver', threshold:1000},
+      {id:'pompes_gold', tier:'gold', threshold:2500},
+      {id:'pompes_platinum', tier:'platinum', threshold:5000}
+    ]},
+    { key:'squats', icon:'🦵', name:'Squats', tiers:[
+      {id:'squats_bronze', tier:'bronze', threshold:500},
+      {id:'squats_silver', tier:'silver', threshold:1200},
+      {id:'squats_gold', tier:'gold', threshold:3000},
+      {id:'squats_platinum', tier:'platinum', threshold:6000}
+    ]},
+    { key:'tractions', icon:'🧗', name:'Tractions', tiers:[
+      {id:'tractions_bronze', tier:'bronze', threshold:200},
+      {id:'tractions_silver', tier:'silver', threshold:500},
+      {id:'tractions_gold', tier:'gold', threshold:1200},
+      {id:'tractions_platinum', tier:'platinum', threshold:2500}
+    ]},
+    { key:'dips', icon:'🏋️', name:'Dips', tiers:[
+      {id:'dips_bronze', tier:'bronze', threshold:300},
+      {id:'dips_silver', tier:'silver', threshold:800},
+      {id:'dips_gold', tier:'gold', threshold:1800},
+      {id:'dips_platinum', tier:'platinum', threshold:3500}
+    ]},
+    // Keep a few milestone badges too
+    { key:'streak', icon:'📅', name:'Streak', tiers:[
+      {id:'streak7', tier:'bronze', threshold:7},
+      {id:'streak14', tier:'silver', threshold:14},
+      {id:'streak30', tier:'gold', threshold:30}
+    ], from:'totals.streak' },
+    { key:'sessions', icon:'✅', name:'Séances', tiers:[
+      {id:'sessions10', tier:'bronze', threshold:10},
+      {id:'sessions25', tier:'silver', threshold:25},
+      {id:'sessions50', tier:'gold', threshold:50},
+      {id:'sessions100', tier:'platinum', threshold:100}
+    ], from:'totals.sessions' },
+    { key:'time', icon:'⏱️', name:'Temps (h)', tiers:[
+      {id:'time10h', tier:'bronze', threshold:10},
+      {id:'time25h', tier:'silver', threshold:25},
+      {id:'time50h', tier:'gold', threshold:50}
+    ], from:'totals.timeHours' }
   ];
+
+  const NAME_MAP = {
+    'pompes':'pompes','pompe':'pompes','push-up':'pompes','push ups':'pompes',
+    'squats':'squats','squat':'squats',
+    'tractions':'tractions','traction':'tractions','pull-up':'tractions','pull ups':'tractions',
+    'dips':'dips','dip':'dips'
+  };
+  function normalizeName(n){ const k=(''+(n||'')).toLowerCase().trim(); return NAME_MAP[k]||null; }
+
+  function computeExerciseTotals(){
+    const totals = { pompes:0, squats:0, tractions:0, dips:0 };
+    try{
+      const log = state.repsLog || {};
+      Object.keys(log).forEach(k=>{
+        const reps = +log[k] || 0;
+        const parts = k.split(':');
+        if(parts.length<3) return;
+        const day = parseInt(parts[0],10);
+        const idx = parseInt(parts[2],10);
+        let d = null; try{ d = (typeof getDayData==='function') ? getDayData(day) : null; }catch(_){}
+        if(!d || !d.items) return;
+        const item = d.items[idx]; if(!item) return;
+        const name = Array.isArray(item)? item[0] : (item && item.name) || '';
+        const key = normalizeName(name);
+        if(key && reps>0) totals[key] = (totals[key]||0) + reps;
+      });
+    }catch(_){}
+    return totals;
+  }
+
+  function extract(path, fallback=0){
+    try{
+      if(path==='totals.timeHours'){ return Math.round((state.totals?.time||0)/3600); }
+      const seg = path.split('.'); let o = state;
+      for(const s of seg){ o = o?.[s]; }
+      return +o || 0;
+    }catch(_){ return fallback; }
+  }
+
+  function tierStatus(tiers, value){
+    let unlocked = null, next = null, progress = 0;
+    for (let i=0;i<tiers.length;i++){
+      if (value >= tiers[i].threshold) { unlocked = tiers[i]; continue; }
+      next = tiers[i]; break;
+    }
+    if (!next){ next = tiers[tiers.length-1]; progress = 1; }
+    else {
+      const prev = unlocked ? unlocked.threshold : 0;
+      const span = next.threshold - prev;
+      progress = Math.max(0, Math.min(1, (value - prev) / span));
+    }
+    return {unlocked, next, progress};
+  }
+
 
   function gainXP(amount){ state.xp = (state.xp||0) + amount; persist(); refreshXP(); }
 
@@ -1685,23 +1778,37 @@ body {
   }
 
   
+  
   function renderBadges(){
     const box = $('#badgesList'); if(!box) return;
-    const prev = Object.assign({}, state.badges||{});
-    BADGE_RULES.forEach(b=>{ if(b.test(state)) state.badges[b.id]=true; });
-    persist();
-
+    box.classList.add('badge-grid');
     box.innerHTML='';
-    BADGE_RULES.forEach(b=>{
-      const was = !!prev[b.id];
-      const now = !!state.badges[b.id];
+    // totals
+    const exTotals = computeExerciseTotals();
+    // Build UI
+    ACHIEVEMENTS.forEach(a=>{
+      const value = (a.from ? extract(a.from, 0) : (exTotals[a.key]||0));
+      const st = tierStatus(a.tiers, value);
       const div = document.createElement('div');
-      div.className = 'workout-item' + (now?' done':'');
-      div.innerHTML = `<div><div class='h2'>🏅 ${b.label}</div><div class='label'>${now?'Débloqué':''}</div></div>`;
-      if(!was && now){ div.classList.add('badge-pop-once'); }
+      div.className = 'achv ' + (st.unlocked?('tier-'+st.unlocked.tier+' unlocked levelup'):'locked');
+      div.innerHTML = `
+        <div class="icon">${a.icon}</div>
+        <div class="name">${a.name}</div>
+        <div class="tier">${st.unlocked ? (st.unlocked.tier.toUpperCase()) : ('→ '+(st.next?st.next.threshold:''))}</div>
+        <div class="bar"><i style="width:${(st.progress*100).toFixed(1)}%"></i></div>
+        <span class="ring"></span>
+      `;
       box.appendChild(div);
     });
+    // persist badges flags for simple lookup (optional)
+    state.badges = state.badges || {};
+    ACHIEVEMENTS.forEach(a=>{
+      const value = (a.from ? extract(a.from, 0) : (exTotals[a.key]||0));
+      a.tiers.forEach(t=>{ if(value>=t.threshold) state.badges[t.id]=true; });
+    });
+    persist();
   }
+
 
   // Hook into calendar day toggle to award XP when marking 'done'
   (function hookCalendarAward(){
@@ -3391,6 +3498,7 @@ function setPrevDisabled() {
 </script>
 
 
+<!-- BADGES-JS-START -->
 <script>
 (function(){
   // ===== Achievements config (push-ups/pompes based) =====
@@ -3421,47 +3529,27 @@ function setPrevDisabled() {
     ]}
   ];
 
-  // Map French exercise names found in plans to normalized keys
   const NAME_MAP = {
-    'pompes':'pompes',
-    'pompe':'pompes',
-    'push-up':'pompes',
-    'push ups':'pompes',
-    'squats':'squats',
-    'squat':'squats',
-    'tractions':'tractions',
-    'traction':'tractions',
-    'pull-up':'tractions',
-    'pull ups':'tractions',
-    'dips':'dips',
-    'dip':'dips'
+    'pompes':'pompes','pompe':'pompes','push-up':'pompes','push ups':'pompes',
+    'squats':'squats','squat':'squats',
+    'tractions':'tractions','traction':'tractions','pull-up':'tractions','pull ups':'tractions',
+    'dips':'dips','dip':'dips'
   };
-
-  function normalizeName(n){
-    if(!n) return null;
-    const key = (''+n).toLowerCase().trim();
-    return NAME_MAP[key]||null;
-  }
-
-  function getState(){ try{ return window.state || (window.state = {}); }catch(e){ return {}; } }
+  function normalizeName(n){ const k=(''+(n||'')).toLowerCase().trim(); return NAME_MAP[k]||null; }
+  function getState(){ try{ return window.state || (window.state={}); }catch(e){ return {}; } }
 
   function computeTotals(){
-    const s = getState();
-    const totals = { pompes:0, squats:0, tractions:0, dips:0 };
+    const s = getState(); const totals = { pompes:0, squats:0, tractions:0, dips:0 };
     try{
       const log = s.repsLog || {};
-      // Keys are like "day:round:index"
       Object.keys(log).forEach(k=>{
         const reps = +log[k] || 0;
-        // We need the exercise by index at that day/round
         const parts = k.split(':');
         if(parts.length<3) return;
         const day = parseInt(parts[0],10);
-        const round = parseInt(parts[1],10);
         const idx = parseInt(parts[2],10);
         if (!Number.isFinite(day) || !Number.isFinite(idx)) return;
-        let d = null;
-        try{ d = (typeof getDayData==='function') ? getDayData(day) : null; }catch(_){}
+        let d = null; try{ d = (typeof getDayData==='function') ? getDayData(day) : null; }catch(_){}
         if (!d || !d.items || !Array.isArray(d.items)) return;
         const item = d.items[idx];
         if (!item) return;
@@ -3477,13 +3565,10 @@ function setPrevDisabled() {
     let unlocked = null, next = null, progress = 0;
     for (let i=0;i<tiers.length;i++){
       if (value >= tiers[i].threshold) { unlocked = tiers[i]; continue; }
-      next = tiers[i];
-      break;
+      next = tiers[i]; break;
     }
-    if (!next){ // at or beyond last tier
-      next = tiers[tiers.length-1];
-      progress = 1;
-    } else {
+    if (!next){ next = tiers[tiers.length-1]; progress = 1; }
+    else {
       const prev = unlocked ? unlocked.threshold : 0;
       const span = next.threshold - prev;
       progress = Math.max(0, Math.min(1, (value - prev) / span));
@@ -3509,14 +3594,12 @@ function setPrevDisabled() {
   }
 
   function updateBadges(){
-    const wrap = ensureBadgesUI();
-    if (!wrap) return;
+    const wrap = ensureBadgesUI(); if (!wrap) return;
     const totals = computeTotals();
     ACHIEVEMENTS.forEach(a=>{
       const value = totals[a.key]||0;
       const t = currentTier(a.tiers, value);
-      const el = document.getElementById('achv-'+a.key);
-      if (!el) return;
+      const el = document.getElementById('achv-'+a.key); if (!el) return;
       const tierEl = el.querySelector('.tier');
       const bar = el.querySelector('.bar > i');
       bar.style.width = (t.progress*100).toFixed(1)+'%';
@@ -3534,7 +3617,6 @@ function setPrevDisabled() {
     });
   }
 
-  // Hook into existing lifecycle
   function hook(){
     try{
       if (typeof window.updateToday === 'function' && !window.updateToday.__achv){
@@ -3550,14 +3632,11 @@ function setPrevDisabled() {
       }
     }catch(_){ setTimeout(updateBadges, 0); }
   }
-
-  if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', hook, {once:true});
-  else hook();
-
-  // Expose for debug
+  if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', hook, {once:true}); else hook();
   window.__updateBadges = updateBadges;
   window.__computeTotals = computeTotals;
 })();
 </script>
+<!-- BADGES-JS-END -->
 
 </body></html>
