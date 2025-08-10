@@ -1,40 +1,42 @@
-const CACHE = 'calisfit-v1';
-const ASSETS = [
+// CalisFit — Service Worker (cache-first with network fallback)
+const CACHE_NAME = 'calisfit-v1';
+const CORE_ASSETS = [
   './',
   './index.html',
   './manifest.json',
   './icons/icon-192.png',
   './icons/icon-512.png',
+  './icons/maskable-192.png',
+  './icons/maskable-512.png',
   './icons/apple-touch-icon.png'
 ];
 
-self.addEventListener('install', e => {
-  self.skipWaiting();
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
-});
-
-self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.map(k => (k!==CACHE ? caches.delete(k) : null))))
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache => cache.addAll(CORE_ASSETS)).then(() => self.skipWaiting())
   );
-  self.clients.claim();
 });
 
-self.addEventListener('fetch', e => {
-  const { request } = e;
-  // Network-first for HTML, cache-first for others
-  if (request.headers.get('accept')?.includes('text/html')) {
-    e.respondWith(fetch(request).then(resp => {
-      const copy = resp.clone();
-      caches.open(CACHE).then(c => c.put(request, copy));
-      return resp;
-    }).catch(() => caches.match(request)));
-  } else {
-    e.respondWith(caches.match(request).then(cached => cached || fetch(request).then(resp => {
-      // Optionally cache new assets
-      const copy = resp.clone();
-      caches.open(CACHE).then(c => c.put(request, copy));
-      return resp;
-    }).catch(() => caches.match('./index.html'))));
-  }
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then(keys => Promise.all(
+      keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+    )).then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch', (event) => {
+  const req = event.request;
+  if (req.method !== 'GET') return;
+
+  event.respondWith(
+    caches.match(req).then(cached => {
+      const fetchPromise = fetch(req).then(resp => {
+        const respClone = resp.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(req, respClone)).catch(()=>{});
+        return resp;
+      }).catch(() => cached);
+      return cached || fetchPromise;
+    })
+  );
 });
