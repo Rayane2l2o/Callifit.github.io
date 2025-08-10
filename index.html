@@ -622,20 +622,20 @@ html.force-light .tab.active{ color:#0b0d12 !important; font-weight:600; }
 #sheetReps .actions { display:flex; justify-content:flex-end; gap:8px; padding:0 14px 14px; }
 
 /* Floating controls above bottom nav */
-#quickControls{display:none !important;}{
+#quickControls{
   position:fixed; left:12px; right:12px; bottom:72px; z-index:40;
   display:flex; gap:8px; justify-content:space-between;
 }
-#quickControls{display:none !important;} .btn{ flex:1; }
+#quickControls{} .btn{ flex:1; }
 @media (max-width:420px){
-  #quickControls{display:none !important;}{ bottom:68px; }
+  #quickControls{ bottom:68px; }
 }
 
 /* Today header simplification */
 #tab-today > .card:first-of-type .label{ display:none !important; }
 #motivation{ display:none !important; }
 
-#quickControls{ display:none !important; }
+#quickControls{}
 
 /* Hide unused sections/cards */
 #tab-programs .card:first-of-type { display:none !important; } /* Plan actif + Générer 3 mois */
@@ -917,7 +917,7 @@ button[id*="day" i].active, button[class*="day" i].active {
             </div>
             
             <div class="header-icons" role="group" aria-label="Contrôles du jour">
-              <button class="btn icon only" id="prevDayBtn" aria-label="Jour précédent" title="Jour précédent" type="button" onclick="try{goToPrevDay&&goToPrevDay()}catch(_e){}" >
+              <button class="btn icon only" id="prevDayBtn" aria-label="Jour précédent" title="Jour précédent" type="button" >
                 <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
                   <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"></path>
                 </svg>
@@ -2128,7 +2128,7 @@ function restBell(){
     if(typeof state.currentDay!=='number') state.currentDay = 1;
     // PLAN_30 length fallback
     const max = (typeof PLAN_30!=='undefined' && PLAN_30?.length) ? PLAN_30.length : 30;
-    state.currentDay = Math.min(state.currentDay + 1, max);
+    state.currentDay = (state.currentDay < max) ? state.currentDay + 1 : 1;
     persist(); updateToday && updateToday();
   }
   function finishSession(){
@@ -2186,7 +2186,7 @@ function restBell(){
     // Advance to next day
     const max = (typeof PLAN_30!=='undefined' && PLAN_30?.length) ? PLAN_30.length : 30;
     if(typeof state.currentDay!=='number') state.currentDay = 1;
-    state.currentDay = Math.min(state.currentDay + 1, max);
+    state.currentDay = (state.currentDay < max) ? state.currentDay + 1 : 1;
     persist();
     updateToday && updateToday();
     // Small visual feedback on button
@@ -2218,7 +2218,7 @@ function restBell(){
     // Advance to next planned day
     const max = (typeof PLAN_30!=='undefined' && PLAN_30?.length) ? PLAN_30.length : 30;
     if(typeof state.currentDay!=='number') state.currentDay = 1;
-    state.currentDay = Math.min(state.currentDay + 1, max);
+    state.currentDay = (state.currentDay < max) ? state.currentDay + 1 : 1;
     persist();
     if(typeof updateToday==='function') updateToday();
   }
@@ -2263,7 +2263,7 @@ function restBell(){
       // Advance day
       const max = (typeof PLAN_30!=='undefined' && PLAN_30?.length) ? PLAN_30.length : 30;
       if(typeof state.currentDay!=='number') state.currentDay = 1;
-      state.currentDay = Math.min(state.currentDay + 1, max);
+      state.currentDay = (state.currentDay < max) ? state.currentDay + 1 : 1;
       persist();
       if(typeof updateToday==='function') updateToday();
     });
@@ -2384,7 +2384,7 @@ function restBell(){
     try {
       const max = findPlanLength();
       if (typeof state.currentDay !== 'number') state.currentDay = 1;
-      state.currentDay = Math.min(state.currentDay + 1, max);
+      state.currentDay = (state.currentDay < max) ? state.currentDay + 1 : 1;
       state.currentRound = 1;
       if (typeof persist === 'function') persist();
       if (typeof updateToday === 'function') updateToday();
@@ -2596,10 +2596,6 @@ function setPrevDisabled() {
 
 <script>
 // Robust click binding for prev-day button (works across re-renders)
-document.addEventListener('click', function(e){
-  var el = e.target.closest && e.target.closest('#prevDayBtn');
-  if(el){ e.preventDefault(); try{ if(typeof goToPrevDay==='function') goToPrevDay(); }catch(_e){} }
-}, true);
 </script>
 
 
@@ -2662,5 +2658,646 @@ document.addEventListener('click', function(e){
 })();
 </script>
 
+<style>
+  /* ========= Mobile App Transitions & Haptics Helpers ========= */
+  :root{
+    --tap-scale: .98;
+    --elev: 0 6px 18px rgba(0,0,0,.25);
+    --elev-soft: 0 2px 10px rgba(0,0,0,.18);
+    --accent: #ffd34f;
+  }
+  *{ -webkit-tap-highlight-color: transparent; }
+  .pressable{
+    transition: transform .12s ease, box-shadow .2s ease, background-color .2s ease, opacity .2s ease;
+    will-change: transform;
+  }
+  .pressable:active{ transform: scale(var(--tap-scale)); }
+  .card-smooth{ box-shadow: var(--elev-soft); border-radius: 16px; }
+  .lift:hover{ box-shadow: var(--elev); transform: translateY(-1px); }
+  .tap-ripple{
+    position: absolute; border-radius: 999px; pointer-events: none;
+    transform: translate(-50%,-50%); opacity: .25; background: currentColor;
+    width: 10px;height: 10px; animation: ripple .45s ease-out forwards;
+    mix-blend-mode: screen;
+  }
+  @keyframes ripple{
+    from { opacity:.25; transform: translate(-50%,-50%) scale(1); }
+    to   { opacity:0;   transform: translate(-50%,-50%) scale(22); }
+  }
+  .view-enter{ opacity: 0; transform: translateY(8px); }
+  .view-enter.view-enter-active{ opacity:1; transform:none; transition: opacity .22s ease, transform .22s ease; }
+  .fade-in{ animation: fadein .24s ease both; }
+  @keyframes fadein{ from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+  :focus-visible{ outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 10px; }
+  .btn,.button,.icon-btn,[role="button"]{
+    position: relative;
+    border-radius: 12px;
+    touch-action: manipulation;
+  }
+  @media (prefers-reduced-motion: reduce){
+    .pressable,.lift,.fade-in,.view-enter{ transition: none !important; animation: none !important; }
+    .tap-ripple{ display:none !important; }
+  }
+</style>
+
+<script>
+(function(){
+  class SoundEngine{
+    constructor(){
+      this.ctx = null; this.master = null;
+      this.enabled = true; this.haptics = true; this.volume = 0.6; this.unlocked = false;
+      this._bindUserUnlock();
+    }
+    _bindUserUnlock(){
+      const unlock = () => {
+        if (this.unlocked) return;
+        try{
+          this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+          this.master = this.ctx.createGain();
+          this.master.gain.value = this.volume;
+          this.master.connect(this.ctx.destination);
+          const o = this.ctx.createOscillator();
+          const g = this.ctx.createGain(); g.gain.value = 0.0001;
+          o.connect(g); g.connect(this.master); o.start(); o.stop(this.ctx.currentTime + 0.02);
+          this.unlocked = true;
+          document.removeEventListener('pointerdown', unlock, {passive:true});
+          document.removeEventListener('touchstart', unlock, {passive:true});
+        }catch(e){}
+      };
+      document.addEventListener('pointerdown', unlock, {passive:true});
+      document.addEventListener('touchstart', unlock, {passive:true});
+    }
+    setVolume(v){ this.volume = Math.max(0, Math.min(1, v)); if(this.master) this.master.gain.value = this.volume; }
+    enable(b=true){ this.enabled = b; }
+    enableHaptics(b=true){ this.haptics = b; }
+    vibrate(pattern=10){
+      if (!this.haptics) return;
+      if (navigator.vibrate) { try{ navigator.vibrate(pattern); }catch{} }
+    }
+    _osc({type='sine', freq=440, dur=0.08, start=0, gain=0.8, attack=0.002, release=0.04, pan=0}={}){
+      if(!this.unlocked || !this.enabled) return;
+      const t0 = this.ctx.currentTime + start;
+      const o  = this.ctx.createOscillator();
+      const g  = this.ctx.createGain();
+      const p  = this.ctx.createStereoPanner ? this.ctx.createStereoPanner() : null;
+      o.type = type; o.frequency.setValueAtTime(freq, t0);
+      g.gain.setValueAtTime(0, t0);
+      g.gain.linearRampToValueAtTime(gain, t0 + attack);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + Math.max(attack, dur - release));
+      if(p){ p.pan.setValueAtTime(pan, t0); o.connect(g); g.connect(p); p.connect(this.master); } else { o.connect(g); g.connect(this.master); }
+      o.start(t0); o.stop(t0 + dur);
+    }
+    _noise({dur=0.25, start=0, cutoff=1000, q=1.2, gain=0.4}={}){
+      if(!this.unlocked || !this.enabled) return;
+      const t0 = this.ctx.currentTime + start;
+      const buffer = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * dur), this.ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for(let i=0;i<data.length;i++){ data[i] = (Math.random()*2 - 1) * (1 - i/data.length); }
+      const src = this.ctx.createBufferSource(); src.buffer = buffer;
+      const filt = this.ctx.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value = cutoff; filt.Q.value=q;
+      const g = this.ctx.createGain(); g.gain.setValueAtTime(gain, t0);
+      src.connect(filt); filt.connect(g); g.connect(this.master);
+      src.start(t0); src.stop(t0 + dur);
+    }
+    click(){ this._osc({type:'square', freq:560, dur:.05, gain:.35}); this.vibrate(8); }
+    hover(){ this._osc({type:'sine',   freq:320, dur:.04, gain:.22}); }
+    toggle(on=true){ this._osc({type:'triangle', freq:on?740:420, dur:.08, gain:.28}); this.vibrate(12); }
+    whoosh(){ this._noise({dur:.28, cutoff:8000, q:.6, gain:.22}); }
+    success(){ this._osc({type:'sine', freq:660, dur:.09, gain:.35}); this._osc({type:'sine', freq:880, start:.08, dur:.09, gain:.32}); this.vibrate([5,40,20]); }
+    error(){ this._osc({type:'sawtooth', freq:180, dur:.12, gain:.4}); this._osc({type:'sawtooth', freq:140, start:.08, dur:.12, gain:.32}); this.vibrate([10,30,10]); }
+    notify(){ this._osc({type:'triangle', freq:980, dur:.07, gain:.28}); }
+    start(){ this._osc({type:'triangle', freq:420, dur:.08, gain:.3}); this._osc({type:'triangle', freq:520, start:.08, dur:.08, gain:.28}); this.whoosh(); this.vibrate([8,40,8]); }
+    pause(){ this._osc({type:'square', freq:300, dur:.06, gain:.26}); this.vibrate(12); }
+    resume(){ this._osc({type:'square', freq:520, dur:.06, gain:.26}); this.vibrate(12); }
+    complete(){ this._osc({type:'sine', freq:784, dur:.11, gain:.36}); this._osc({type:'sine', freq:1046.5, start:.1, dur:.12, gain:.34}); this.vibrate([20,60,20]); }
+    tick(){ this._osc({type:'square', freq:880, dur:.025, gain:.22}); }
+    trigger(name){ if(this[name]) this[name](); }
+  }
+  const SFX = new SoundEngine(); window.SFX = SFX;
+
+  function makePressable(el){
+    if(el.__pressableBound) return; el.__pressableBound = true;
+    el.classList.add('pressable');
+    el.addEventListener('pointerenter', e=>{
+      if(el.hasAttribute('disabled') || el.getAttribute('aria-disabled')==='true') return;
+      SFX.hover();
+    }, {passive:true});
+    el.addEventListener('click', e=>{
+      if(el.hasAttribute('disabled') || el.getAttribute('aria-disabled')==='true'){ SFX.error(); return; }
+      SFX.click();
+      const rect = el.getBoundingClientRect();
+      const x = (e.clientX|| (rect.left+rect.width/2)) - rect.left;
+      const y = (e.clientY|| (rect.top+rect.height/2)) - rect.top;
+      const rp = document.createElement('span');
+      rp.className = 'tap-ripple';
+      rp.style.left = x + 'px';
+      rp.style.top  = y + 'px';
+      rp.style.color = getComputedStyle(el).color;
+      el.style.position = getComputedStyle(el).position === 'static' ? 'relative' : getComputedStyle(el).position;
+      el.appendChild(rp);
+      setTimeout(()=> rp.remove(), 480);
+    }, {passive:true});
+  }
+  function autoBindButtons(){
+    const candidates = Array.from(document.querySelectorAll(
+      'button, .btn, .button, .icon-btn, [role=\"button\"], a[href], [data-action], [data-sound]'
+    ));
+    candidates.forEach(makePressable);
+    candidates.forEach(el=>{
+      const label = (el.getAttribute('aria-label') || el.innerText || '').toLowerCase();
+      const idc = (el.id || '' ) + ' ' + (el.className || '');
+      const isNext = /suivant|next|>|jour suivant/.test(label+idc);
+      const isPrev = /précédent|precedent|prev|<|jour précédent/.test(label+idc);
+      const isStart = /lancer|start|démarrer|demarrer|go|play/.test(label+idc);
+      const isStop  = /stop|terminer|fin|end|arrêter|arreter/.test(label+idc);
+      const isPause = /pause/.test(label+idc);
+      const isResume= /reprendre|resume|continuer/.test(label+idc);
+      const isValidate = /valider|ok|save|enregistrer|confirm/.test(label+idc);
+      const isDelete   = /supprimer|delete|remove|trash/.test(label+idc);
+      el.addEventListener('click', ()=>{
+        if(isNext || isPrev) SFX.whoosh();
+        if(isStart) SFX.start();
+        if(isStop)  SFX.complete();
+        if(isPause) SFX.pause();
+        if(isResume)SFX.resume();
+        if(isValidate) SFX.success();
+        if(isDelete) SFX.error();
+      }, {passive:true});
+    });
+  }
+  function bindTimerObserver(){
+    const targets = Array.from(document.querySelectorAll('[id*=\"timer\"], .timer, [data-timer]'));
+    targets.forEach(el=>{
+      let lastText = el.textContent.trim();
+      const obs = new MutationObserver(()=>{
+        const t = el.textContent.trim();
+        if (t !== lastText){
+          lastText = t;
+          if (/^\\d{1,3}(:\\d{2})?$/.test(t)) SFX.tick();
+          if (t === '0' || t === '00:00' || t === '0:00') SFX.complete();
+        }
+      });
+      obs.observe(el, {childList:true, characterData:true, subtree:true});
+    });
+  }
+  function screenTransition(){
+    document.body.classList.add('view-enter');
+    requestAnimationFrame(()=>{ document.body.classList.add('view-enter-active'); });
+    window.addEventListener('hashchange', ()=>{
+      SFX.whoosh();
+      document.body.classList.remove('view-enter','view-enter-active');
+      void document.body.offsetWidth;
+      document.body.classList.add('view-enter');
+      requestAnimationFrame(()=> document.body.classList.add('view-enter-active'));
+    });
+    document.addEventListener('visibilitychange', ()=>{
+      if(document.visibilityState === 'visible'){ SFX.notify(); }
+    });
+  }
+  function injectSfxTuner(){
+    const panel = document.createElement('div');
+    panel.style.position='fixed'; panel.style.bottom='14px'; panel.style.right='14px';
+    panel.style.background='rgba(20,22,28,.88)'; panel.style.backdropFilter='blur(6px)';
+    panel.style.border='1px solid rgba(255,255,255,.06)'; panel.style.borderRadius='14px';
+    panel.style.padding='10px 12px'; panel.style.zIndex='9999'; panel.style.color='#fff';
+    panel.style.font='14px system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
+    panel.style.boxShadow='0 6px 18px rgba(0,0,0,.25)';
+    panel.className='card-smooth pressable';
+    panel.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;">
+        <strong style="font-size:13px;opacity:.9">Audio</strong>
+        <input id="sfxVol" type="range" min="0" max="1" step="0.01" value="${SFX.volume}" style="width:110px">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+          <input id="sfxOn" type="checkbox" checked>
+          <span style="opacity:.9">On</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+          <input id="haptOn" type="checkbox" checked>
+          <span style="opacity:.9">Haptique</span>
+        </label>
+        <button id="sfxTest" class="btn" style="margin-left:6px;padding:6px 10px;border-radius:10px;border:none;background:#2a2f3a;color:#fff;">Test</button>
+      </div>`;
+    document.body.appendChild(panel);
+    const vol = panel.querySelector('#sfxVol');
+    const on  = panel.querySelector('#sfxOn');
+    const hap = panel.querySelector('#haptOn');
+    const test= panel.querySelector('#sfxTest');
+    const saved = JSON.parse(localStorage.getItem('sfx-prefs')||'{}');
+    if(saved.volume != null){ vol.value = saved.volume; SFX.setVolume(+saved.volume); }
+    if(saved.enabled != null){ on.checked = saved.enabled; SFX.enable(saved.enabled); }
+    if(saved.haptics != null){ hap.checked = saved.haptics; SFX.enableHaptics(saved.haptics); }
+    const sync = ()=> localStorage.setItem('sfx-prefs', JSON.stringify({volume: +vol.value, enabled: on.checked, haptics: hap.checked}));
+    vol.addEventListener('input', ()=>{ SFX.setVolume(+vol.value); sync(); }, {passive:true});
+    on.addEventListener('change', ()=>{ SFX.enable(on.checked); sync(); }, {passive:true});
+    hap.addEventListener('change',()=>{ SFX.enableHaptics(hap.checked); sync(); }, {passive:true});
+    test.addEventListener('click', ()=>{ SFX.success(); }, {passive:true});
+  }
+  const aliases = { 'timer-tick':'tick', 'timer-complete':'complete', 'validation':'success' };
+  const _origTrigger = SFX.trigger.bind(SFX);
+  SFX.trigger = (name)=>{ if(aliases[name]) name = aliases[name]; _origTrigger(name); };
+
+  function boot(){
+    screenTransition();
+    autoBindButtons();
+    bindTimerObserver();
+    injectSfxTuner();
+    document.querySelectorAll('button,.btn,.button,[role="button"]').forEach(el=> el.classList.add('pressable'));
+    document.querySelectorAll('main,section,.screen,.view').forEach(el=> el.classList.add('fade-in'));
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, {once:true});
+  else boot();
+})();
+</script>
+<!-- ==== ROBUST FIXES: buttons, tabs, calendar, prev/next (mobile-safe) ==== -->
+<script>
+(function(){
+  // Helper
+  const $ = (sel, ctx=document) => ctx.querySelector(sel);
+  const $$ = (sel, ctx=document) => Array.from(ctx.querySelectorAll(sel));
+
+  // ---------- Prev / Next Day helpers ----------
+  function getPlanMax(){
+    try{
+      if (typeof window.PLAN_30 !== 'undefined' && PLAN_30 && PLAN_30.length) return PLAN_30.length;
+      if (typeof window.PLAN !== 'undefined' && PLAN && PLAN.length) return PLAN.length;
+    }catch(e){}
+    return 30;
+  }
+  function getDay(){
+    if (typeof window.state==='object' && typeof state.currentDay==='number') return state.currentDay;
+    const t = $('#todayTitle'); if(t){ const m = t.textContent.match(/Jour\s+(\d+)/i); if(m) return parseInt(m[1],10); }
+    return 1;
+  }
+  function setDay(n){
+    if (typeof window.state!=='object') window.state = {};
+    state.currentDay = n;
+    try{ persist && persist(); }catch(_e){}
+    try{ typeof updateToday==='function' && updateToday(); }catch(_e){}
+    try{ typeof activateTab==='function' && activateTab('today','tabTodayBtn'); }catch(_e){}
+  }
+  function goPrev(){ const max=getPlanMax(); const d=getDay(); setDay(d>1?d-1:max); }
+  function goNext(){ const max=getPlanMax(); const d=getDay(); setDay(d<max?d+1:1); }
+  window.goToPrevDay = goPrev; // expose
+
+  // ---------- Finish & Next: ensure calendar mark + move day ----------
+  function finishAndNext(){
+    try {
+      const now = new Date(); const y=now.getFullYear(), m=now.getMonth()+1, d=now.getDate();
+      const key = `d${y}-${m}-${d}`; // matches calendar format
+      state.calendar = state.calendar || {};
+      const already = state.calendar[key] === 'done';
+      state.calendar[key] = 'done';
+      state.totals = state.totals || {};
+      if(!already){
+        state.totals.sessions = (state.totals.sessions||0)+1;
+        state.totals.streak = (state.totals.streak||0)+1;
+      }
+      if (typeof addHistory === 'function') addHistory('today');
+      persist && persist();
+      typeof buildCalendar==='function' && buildCalendar();
+      typeof updateStats==='function' && updateStats();
+      goNext();
+    } catch(e){ console.warn('finishAndNext error', e); }
+  }
+
+  // ---------- Bindings (robust & re-entrant) ----------
+  function bindCore(){
+    const prev = $('#prevDayBtn'); if(prev && !prev.__bound){ prev.__bound=true; prev.type='button'; prev.addEventListener('click', (ev)=>{ ev.preventDefault(); goPrev(); }); }
+    const next = $('#nextDayBtn'); if(next && !next.__bound){ next.__bound=true; next.addEventListener('click', (ev)=>{ ev.preventDefault(); goNext(); }); }
+    const finx = $('#finishNextBtn'); if(finx && !finx.__bound){ finx.__bound=true; finx.addEventListener('click', (ev)=>{ ev.preventDefault(); finishAndNext(); }); }
+    const fin = $('#finishBtn'); if(fin && !fin.__bound){ fin.__bound=true; fin.addEventListener('click', (ev)=>{ ev.preventDefault(); finishAndNext(); }); }
+    // Round navigation if present
+    const pr = $('#prevRound'); if(pr && !pr.__bound){ pr.__bound=true; pr.addEventListener('click', (e)=>{ e.preventDefault(); if(typeof state.currentRound!=='number') state.currentRound=1; state.currentRound=Math.max(1,state.currentRound-1); persist&&persist(); typeof updateToday==='function'&&updateToday(); }); }
+    const nr = $('#nextRound'); if(nr && !nr.__bound){ nr.__bound=true; nr.addEventListener('click', (e)=>{ e.preventDefault(); if(typeof state.currentRound!=='number') state.currentRound=1; state.currentRound=Math.min(5,state.currentRound+1); persist&&persist(); typeof updateToday==='function'&&updateToday(); }); }
+  }
+
+  // Patch updateToday so we re-bind after each render
+  function patchUpdate(){
+    if (typeof window.updateToday === 'function' && !window.updateToday.__patchedAll){
+      const _u = window.updateToday;
+      window.updateToday = function(){
+        const r = _u.apply(this, arguments);
+        setTimeout(bindCore, 0);
+        return r;
+      };
+      window.updateToday.__patchedAll = true;
+    }
+  }
+
+  // Tab navigation delegate (if project forgot to bind)
+  document.addEventListener('click', function(e){
+    const tab = e.target.closest && e.target.closest('.tabs .tab[role="tab"]');
+    if(!tab) return;
+    const id = tab.getAttribute('aria-controls'); if(!id) return;
+    e.preventDefault();
+    $$('.tabs .tab').forEach(b=>{ b.classList.toggle('active', b===tab); b.setAttribute('aria-selected', b===tab?'true':'false'); });
+    $$('main > section[role="region"]').forEach(sec=> sec.classList.toggle('active', sec.id===id));
+    try{ typeof SFX!=='undefined' && SFX.whoosh(); }catch(_e){}
+  }, true);
+
+  // Initial & subsequent binds
+  function start(){
+    bindCore(); patchUpdate();
+    // Observe DOM mutations to rebind when header/content re-renders
+    new MutationObserver(()=>{ bindCore(); }).observe(document.body, {childList:true, subtree:true});
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, {once:true});
+  else start();
+})();
+</script>
+
+<!-- ==== OVERRIDES: fix prev/next jumping and hide bottom big buttons ==== -->
+<style>
+  /* Hide common bottom bars if present */
+  .bottom-bar, .footer-actions, #bottomActions, .sticky-bottom, .fixed-bottom {
+    display: none !important;
+  }
+</style>
+<script>
+(function(){
+  const $ = (sel, ctx=document) => ctx.querySelector(sel);
+  const $$ = (sel, ctx=document) => Array.from(ctx.querySelectorAll(sel));
+  let navLock = false;
+  function lock(ms=220){ navLock = true; setTimeout(()=> navLock=false, ms); }
+
+  function getMax(){
+    try{
+      if (typeof window.PLAN_30 !== 'undefined' && PLAN_30 && PLAN_30.length) return PLAN_30.length;
+      if (typeof window.PLAN !== 'undefined' && PLAN && PLAN.length) return PLAN.length;
+    }catch(e){}
+    return 30;
+  }
+  function getDay(){
+    if (typeof window.state==='object' && typeof state.currentDay==='number') return state.currentDay;
+    const t = document.querySelector('#todayTitle'); if(t){ const m=t.textContent.match(/Jour\s+(\d+)/i); if(m) return parseInt(m[1],10); }
+    return 1;
+  }
+  function setDaySafe(n){
+    if (typeof window.state!=='object') window.state = {};
+    const max = getMax();
+    const d = ((n-1+max)%max)+1; // 1..max wrap
+    state.currentDay = d;
+    try{ typeof persist==='function' && persist(); }catch(e){}
+    try{ typeof updateToday==='function' && updateToday(); }catch(e){}
+  }
+  function rebindStrict(){
+    const prevCandidates = $$('button, .btn, [role="button"], a').filter(el=>/précédent|precedent/i.test((el.innerText||el.ariaLabel||'') + ' ' + (el.id||'') + ' ' + (el.className||'')));
+    const nextCandidates = $$('button, .btn, [role="button"], a').filter(el=>/suivant/i.test((el.innerText||el.ariaLabel||'') + ' ' + (el.id||'') + ' ' + (el.className||'')));
+
+    const bindOne = (el, dir) => {
+      if (el.__navBoundStrict) return;
+      el.__navBoundStrict = true;
+      el.addEventListener('click', (e)=>{
+        // hard-stop other handlers to avoid double increments
+        e.preventDefault(); e.stopImmediatePropagation(); e.stopPropagation();
+        if (navLock) return;
+        const cur = getDay();
+        const max = getMax();
+        const next = dir==='prev' ? (cur===1?max:cur-1) : (cur===max?max:cur+1);
+        setDaySafe(next);
+        try{ if (window.SFX) SFX.whoosh(); }catch(_){}
+        lock();
+      }, true);
+    };
+
+    prevCandidates.forEach(el=>bindOne(el,'prev'));
+    nextCandidates.forEach(el=>bindOne(el,'next'));
+  }
+
+  function hideBottomBigButtons(){
+    // Hide by text content
+    const texts = [/^jour\s+suivant/i, /^jour\s+pr(é|e)c(é|e)dent/i, /^terminer\s+s(é|e)ance/i, /^terminer\b/i];
+    $$('button, .btn, [role="button"], a').forEach(el=>{
+      const t = (el.innerText||'').trim().toLowerCase();
+      if (texts.some(rx=>rx.test(t))) {
+        // If it's visually the large one (wide or fixed), hide it
+        const rect = el.getBoundingClientRect();
+        if (rect.width > 220 || rect.height > 44) {
+          el.style.display = 'none';
+          el.removeAttribute('id'); // prevent other code from trying to rebind it
+        }
+      }
+    });
+    // Also hide known containers
+    ['#bottomActions', '.bottom-bar', '.footer-actions', '.sticky-bottom', '.fixed-bottom'].forEach(sel=>{
+      document.querySelectorAll(sel).forEach(el=> el.style.display='none');
+    });
+  }
+
+  function start(){
+    rebindStrict();
+    hideBottomBigButtons();
+    new MutationObserver(()=>{ rebindStrict(); hideBottomBigButtons(); }).observe(document.body, {childList:true, subtree:true});
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, {once:true});
+  else start();
+})();
+</script>
+
+<script>
+(function(){
+  const moveAudioPanel = () => {
+    const panel = document.querySelector('#audioPanel, .audio-panel, .sfx-panel');
+    const settingsTab = document.querySelector('#tab-settings, #settingsTab, section#settings, main section[aria-label*="Param"], main section[aria-label*="param"]');
+    if(panel && settingsTab){
+      settingsTab.appendChild(panel);
+    } else if (panel) {
+      panel.style.display = 'none';
+    }
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', moveAudioPanel, {once:true});
+  else moveAudioPanel();
+})();
+</script>
+
+<script>
+(function(){
+  const $ = (sel, ctx=document) => ctx.querySelector(sel);
+  const $$ = (sel, ctx=document) => Array.from(ctx.querySelectorAll(sel));
+  let navLock = false;
+  function lock(ms=250){ navLock = true; setTimeout(()=> navLock=false, ms); }
+  function getMax(){
+    try{
+      if (typeof window.PLAN_30 !== 'undefined' && PLAN_30 && PLAN_30.length) return PLAN_30.length;
+      if (typeof window.PLAN !== 'undefined' && PLAN && PLAN.length) return PLAN.length;
+    }catch(e){}
+    return 30;
+  }
+  function getDay(){
+    if (typeof window.state==='object' && typeof state.currentDay==='number') return state.currentDay;
+    const t = document.querySelector('#todayTitle'); if(t){ const m=t.textContent.match(/Jour\s+(\d+)/i); if(m) return parseInt(m[1],10); }
+    return 1;
+  }
+  function setDaySafe(n){
+    if (typeof window.state!=='object') window.state = {};
+    const max = getMax();
+    let d = n;
+    if (d < 1) d = max;
+    if (d > max) d = max;
+    state.currentDay = d;
+    try{ typeof persist==='function' && persist(); }catch(e){}
+    try{ typeof updateToday==='function' && updateToday(); }catch(e){}
+  }
+  function rebindNav(){
+    const prevButtons = $$('button, .btn, [role="button"], a').filter(el=>/pr(é|e)c(é|e)dent/i.test((el.innerText||el.ariaLabel||'') + ' ' + (el.id||'') + ' ' + (el.className||'')));
+    const nextButtons = $$('button, .btn, [role="button"], a').filter(el=>/suivant/i.test((el.innerText||el.ariaLabel||'') + ' ' + (el.id||'') + ' ' + (el.className||'')));
+    const bindOne = (el, dir) => {
+      if (el.__boundFinal) return;
+      el.__boundFinal = true;
+      el.addEventListener('click', (e)=>{
+        e.preventDefault(); e.stopImmediatePropagation(); e.stopPropagation();
+        if (navLock) return;
+        const cur = getDay();
+        const max = getMax();
+        const newDay = dir==='prev' ? (cur===1?max:cur-1) : (cur===max?max:cur+1);
+        setDaySafe(newDay);
+        try{ if (window.SFX) SFX.whoosh(); }catch(_){}
+        lock();
+      }, true);
+    };
+    prevButtons.forEach(b=>bindOne(b,'prev'));
+    nextButtons.forEach(b=>bindOne(b,'next'));
+  }
+  function start(){
+    rebindNav();
+    new MutationObserver(()=>{ rebindNav(); }).observe(document.body,{childList:true,subtree:true});
+  }
+  if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', start, {once:true});
+  else start();
+})();
+</script>
+
+<!-- === SAFE PATCH v2 (guarded) === -->
+<script>
+(function(){
+  const $  = (s,ctx=document)=>ctx.querySelector(s);
+  const $$ = (s,ctx=document)=>Array.from(ctx.querySelectorAll(s));
+
+  // ---------- Guard helpers ----------
+  function safe(fn){ return function(){ try{ return fn.apply(this, arguments);}catch(e){ console.warn('[patch error]', e); } }; }
+  function throttle(fn, ms){
+    let t=0, pend=false;
+    return function(){
+      const now = Date.now();
+      const args = arguments, ctx = this;
+      if (now - t >= ms){ t = now; fn.apply(ctx,args); }
+      else if (!pend){ pend = true; setTimeout(()=>{ pend=false; t=Date.now(); fn.apply(ctx,args); }, ms - (now - t)); }
+    };
+  }
+
+  // ---------- Move/Hide Audio panel safely ----------
+  const moveAudioPanel = safe(function(){
+    const vol = document.querySelector('#sfxVol');
+    if(!vol) return;
+    const panel = vol.closest('div');
+    if(!panel) return;
+    panel.id = panel.id || 'audioPanel';
+    const settings =
+      $('#settings') || $('#settingsTab') || $('#tab-settings') ||
+      $('section#settings') ||
+      Array.from(document.querySelectorAll('section,main,div')).find(el=>{
+        const a = (el.getAttribute('aria-label')||'') + ' ' + (el.id||'') + ' ' + (el.className||'');
+        return /param|réglage|reglage|settings/i.test(a);
+      });
+    if (settings){
+      Object.assign(panel.style, { position:'relative', right:'auto', bottom:'auto', margin:'14px 0' });
+      settings.appendChild(panel);
+    } else {
+      panel.style.display = 'none';
+    }
+  });
+
+  // ---------- Helpers for days ----------
+  const getMax = safe(function(){
+    try{
+      if (typeof window.PLAN_30 !== 'undefined' && PLAN_30 && PLAN_30.length) return PLAN_30.length;
+      if (typeof window.PLAN !== 'undefined' && PLAN && PLAN.length) return PLAN.length;
+    }catch(e){}
+    return 30;
+  });
+
+  const getDay = safe(function(){
+    try{
+      if (typeof window.state==='object' && typeof state.currentDay==='number') return state.currentDay;
+    }catch(e){}
+    const t = document.querySelector('#todayTitle');
+    if(t){
+      const m = (t.textContent||'').match(/Jour\s+(\d+)/i);
+      if(m) return parseInt(m[1],10);
+    }
+    return 1;
+  });
+
+  const setDaySafe = safe(function(n){
+    const max = getMax()||30;
+    let d = parseInt(n,10);
+    if (!isFinite(d)) return;
+    if (d < 1) d = 1;      // pas de wrap en avant
+    if (d > max) d = max;  // pas de wrap en avant
+    if (typeof window.state!=='object') window.state = {};
+    state.currentDay = d;
+    try{ typeof persist==='function' && persist(); }catch(e){}
+    try{ typeof updateToday==='function' && updateToday(); }catch(e){}
+  });
+
+  // ---------- Hide only the large bottom CTA buttons (by text + size) ----------
+  const hideLargeBottomButtons = safe(function(){
+    const texts = [/^jour\s+suivant/i, /^jour\s+pr(é|e)c(é|e)dent/i, /^terminer\s+s(é|e)ance/i, /^terminer\b/i];
+    $$('button, .btn, [role="button"], a').forEach(el=>{
+      const t = (el.innerText||'').trim().toLowerCase();
+      const rect = el.getBoundingClientRect ? el.getBoundingClientRect() : {width:0,height:0,top:0};
+      const nearBottom = (window.innerHeight - rect.top) < 180; // dans la zone basse
+      const large = rect.width > 220 || rect.height > 44;
+      if (texts.some(rx=>rx.test(t)) && (large || nearBottom)){
+        el.style.display = 'none';
+      }
+    });
+  });
+
+  // ---------- Corrector for prev/next (measure then correct) ----------
+  const bindNavCorrector = safe(function(){
+    const isPrev = (el) => /pr(é|e)c(é|e)dent/i.test(((el.innerText||el.ariaLabel||'') + ' ' + (el.id||'') + ' ' + (el.className||'')).toLowerCase());
+    const isNext = (el) => /suivant/i.test(((el.innerText||el.ariaLabel||'') + ' ' + (el.id||'') + ' ' + (el.className||'')).toLowerCase());
+    const candidates = $$('button, .btn, [role="button"], a[href], [data-action]');
+    candidates.forEach(el=>{
+      if (el.__navCorrectorBound) return;
+      if (!isPrev(el) && !isNext(el)) return;
+      el.__navCorrectorBound = true;
+      const dir = isPrev(el) ? -1 : +1;
+      el.addEventListener('click', safe(()=>{
+        const before = getDay()||1;
+        setTimeout(safe(()=>{
+          const after = getDay()||before;
+          const max = getMax()||30;
+          let delta = after - before;
+          if (delta >  max/2) delta -= max;
+          if (delta < -max/2) delta += max;
+          if (delta === dir) return;
+          let target = before + dir;
+          if (target < 1) target = 1;     // no wrap forward
+          if (target > max) target = max; // no wrap forward
+          setDaySafe(target);
+        }), 50);
+      }), {passive:true});
+    });
+  });
+
+  // ---------- Boot with throttled observer ----------
+  const refresh = throttle(function(){
+    moveAudioPanel();
+    hideLargeBottomButtons();
+    bindNavCorrector();
+  }, 200);
+
+  function start(){
+    refresh();
+    const obs = new MutationObserver(refresh);
+    obs.observe(document.body, {childList:true, subtree:true});
+  }
+
+  if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', start, {once:true});
+  else start();
+})();
+</script>
 </body>
 </html>
