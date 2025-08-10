@@ -1011,7 +1011,250 @@ body {
 
 </style>
 
-</head>
+<style>
+/* --- Elegant Minimal + Animations (no layout/JS changes) --- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+:root{
+  --bg:#0b0d12;
+  --panel:#121620;
+  --panel-2:#161b26;
+  --text:#e9eef6;
+  --muted:#a4b1c7;
+  --line:rgba(255,255,255,0.06);
+  --accent:#4da3ff;
+  --accent-2:#7bc6ff;
+  --success:#35d49a;
+  --danger:#ff6b6b;
+  --warning:#ffd166;
+  --shadow:0 10px 30px rgba(0,0,0,0.35);
+}
+
+/* Base + clean background (no flashy gradients) */
+html, body{
+  font-family:'Inter', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  background: var(--bg);
+  color:var(--text);
+  letter-spacing:0.1px;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+
+/* Subtle vignette (static) */
+body::before{
+  content:"";
+  position:fixed; inset:0;
+  pointer-events:none;
+  background: radial-gradient(60% 60% at 50% -10%, rgba(255,255,255,0.05), transparent 60%),
+              radial-gradient(90% 70% at 100% 20%, rgba(77,163,255,0.07), transparent 60%);
+  opacity:.65;
+  z-index:-1;
+}
+
+/* Gentle animated accent line at the very top (thin) */
+body::after{
+  content:"";
+  position:fixed; left:0; top:0; right:0; height:2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  background-size: 200% 100%;
+  animation: headerSweep 8s linear infinite;
+  opacity:0.45;
+  pointer-events:none;
+  z-index: 1;
+}
+@keyframes headerSweep { 0%{ background-position: 200% 0; } 100%{ background-position: -200% 0; } }
+
+/* Panels / cards */
+.card, .panel, .container, .box, .tile, .sheet {
+  background:linear-gradient(180deg, var(--panel), var(--panel-2));
+  border:1px solid var(--line);
+  border-radius:16px;
+  box-shadow: var(--shadow);
+  backdrop-filter:saturate(1.05) blur(0.3px);
+  animation: fadeUp .45s ease both;
+}
+@keyframes fadeUp {
+  from { opacity:0; transform: translateY(4px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+
+/* Headings */
+h1,h2,h3,h4{
+  line-height:1.2;
+  letter-spacing:0.2px;
+  animation: fadeIn .4s ease both;
+}
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+/* Buttons with animated sheen + micro-interactions */
+button, .btn, [role="button"]{
+  position:relative;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,0.06);
+  background: linear-gradient(180deg, var(--accent), var(--accent-2));
+  color:#07121d;
+  font-weight:700;
+  padding:10px 16px;
+  transition: transform .15s ease, box-shadow .2s ease, filter .2s ease;
+  box-shadow: 0 6px 16px rgba(77,163,255,.35);
+  overflow:hidden;
+}
+button.secondary, .btn.secondary{
+  background: linear-gradient(180deg, #1a2230, #161c27);
+  color: var(--text);
+  border-color: var(--line);
+  box-shadow:none;
+}
+button.success, .btn.success{ background: linear-gradient(180deg, var(--success), #1fd6a4); color:#062017; }
+button.danger, .btn.danger{ background: linear-gradient(180deg, var(--danger), #ff867c); color:#2a0707; }
+
+/* Sheen */
+20% { opacity:.45; }
+  50% { transform: translateX(30%) rotate(10deg); opacity:.25; }
+  100%{ transform: translateX(100%) rotate(10deg); opacity:0; }
+}
+
+button:hover, .btn:hover{ transform: translateY(-1px); filter:saturate(1.04); }
+button:active, .btn:active{ transform: translateY(0); filter:saturate(0.98); }
+button:focus-visible, .btn:focus-visible{
+  outline: 3px solid rgba(77,163,255,0.55);
+  outline-offset:2px;
+  box-shadow: 0 0 0 6px rgba(77,163,255,0.18);
+}
+
+/* Inputs: breathing glow on focus */
+input, select, textarea{
+  background:#0f141e;
+  color:var(--text);
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:10px 12px;
+  transition:border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+input::placeholder, textarea::placeholder{ color:var(--muted); }
+input:focus, select:focus, textarea:focus{
+  border-color:rgba(77,163,255,0.6);
+  box-shadow:0 0 0 6px rgba(77,163,255,0.10);
+  outline:none;
+  animation: breathe 1.4s ease-in-out infinite;
+}
+@keyframes breathe{
+  0%,100%{ box-shadow:0 0 0 6px rgba(77,163,255,0.10); }
+  50%{    box-shadow:0 0 0 8px rgba(77,163,255,0.18); }
+}
+
+/* Tabs (generic) with sliding underline */
+.tab, .tabs button{
+  background:linear-gradient(180deg, #141a25, #121721);
+  border:1px solid var(--line);
+  border-radius:12px;
+  position:relative;
+  overflow:hidden;
+  transition: filter .2s ease, transform .15s ease;
+}
+.tab:hover, .tabs button:hover{ transform: translateY(-1px); }
+.tab.active, .tabs button[aria-selected="true"]{
+  background:linear-gradient(180deg, #1b2230, #182130);
+  border-color:rgba(77,163,255,0.45);
+  box-shadow:inset 0 0 0 1px rgba(77,163,255,0.24);
+}
+.tab.active::after, .tabs button[aria-selected="true"]::after{
+  content:""; position:absolute; left:8px; right:8px; bottom:6px; height:2px;
+  background:linear-gradient(90deg, var(--accent), var(--success));
+  animation: underlineSlide 1.6s ease-in-out infinite;
+}
+@keyframes underlineSlide {
+  0%{ transform: translateX(-10%); opacity:.7; }
+  50%{ transform: translateX(10%); opacity:1; }
+  100%{ transform: translateX(-10%); opacity:.7; }
+}
+
+/* Tables */
+table{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+  background:linear-gradient(180deg, var(--panel), var(--panel-2));
+  border:1px solid var(--line);
+  border-radius:14px;
+  overflow:hidden;
+  animation: fadeUp .45s ease both;
+}
+thead th{
+  text-align:left;
+  font-weight:600;
+  color:var(--muted);
+  background:#111622;
+}
+tbody tr{ transition: background .2s ease; }
+tbody tr:hover{ background:rgba(255,255,255,0.03); }
+tbody tr + tr td{ border-top:1px solid var(--line); }
+td, th{ padding:10px 12px; }
+
+/* Badges & chips with gentle float animation */
+.badge, .chip, .pill{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:6px 10px;
+  border-radius:999px;
+  font-weight:600;
+  border:1px solid var(--line);
+  background:linear-gradient(180deg, #141a25, #121721);
+  color:var(--text);
+  transition:transform .15s ease, box-shadow .2s ease, filter .2s ease;
+  animation: floaty 6s ease-in-out infinite;
+}
+@keyframes floaty{ 0%,100%{ transform: translateY(0); } 50%{ transform: translateY(-2px); } }
+.badge.success{ background:linear-gradient(180deg, rgba(53,212,154,.18), rgba(53,212,154,.10)); color:#bdf2e1; border-color:rgba(53,212,154,.25); }
+.badge.danger{ background:linear-gradient(180deg, rgba(255,107,107,.18), rgba(255,107,107,.08)); color:#ffd6d6; border-color:rgba(255,107,107,.25); }
+.badge:hover{ box-shadow:0 10px 24px rgba(0,0,0,0.25); filter:saturate(1.05); }
+
+/* Progress / streak counters with moving stripes */
+.progress, .streak, .meter{
+  background:#0e1420;
+  border:1px solid var(--line);
+  border-radius:12px;
+  overflow:hidden;
+}
+.progress > .bar, .streak > .bar, .meter > .bar{
+  background: repeating-linear-gradient(
+    90deg,
+    var(--accent) 0, var(--accent) 12px,
+    var(--success) 12px, var(--success) 24px
+  );
+  height:10px;
+  animation: moveStripes 1.4s linear infinite;
+}
+@keyframes moveStripes { from{ background-position-x: 0; } to{ background-position-x: 48px; } }
+
+/* Links */
+a{ color:var(--accent); text-decoration:none; transition: color .15s ease; }
+a:hover{ text-decoration:underline; color:var(--accent-2); }
+
+/* Universal hover lift for clickable UI */
+*[data-clickable="true"], button, .btn, .chip, .badge, .tab, .tabs button{
+  transition: transform .15s ease, filter .2s ease, box-shadow .2s ease;
+}
+*[data-clickable="true"]:hover{ transform: translateY(-1px); }
+
+/* Calendar day cues + gentle pulse when completed / off */
+.day.off, .rest, .offday{
+  background: rgba(255,107,107,0.14)!important;
+  border-color: rgba(255,107,107,0.35)!important;
+  animation: pulseBorder 1.6s ease-in-out infinite;
+}
+.day.ok, .active, .completed{
+  background: rgba(53,212,154,0.14)!important;
+  border-color: rgba(53,212,154,0.35)!important;
+  animation: pulseBorder 1.6s ease-in-out infinite;
+}
+@keyframes pulseBorder {
+  0%,100%{ box-shadow:0 0 0 0 rgba(77,163,255,0.0); }
+  50%{    box-shadow:0 0 0 6px rgba(77,163,255,0.06); }
+}
+
+/* Dividers */
+.hr, hr{ border: none; height:1px; background:var(--line); opacity:.9; }
+</style></head>
 <body>
   
   <div class="safe-area-spacer" aria-hidden="true"></div>
