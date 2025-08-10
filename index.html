@@ -881,6 +881,80 @@ button[id*="day" i].active, button[class*="day" i].active {
 })();
 </script>
 <!-- === /REDESIGN THEME === -->
+
+<style>
+/* ===== Modern gradient background optimized for iPhone 15 ===== */
+body {
+  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364) fixed;
+  background-size: 400% 400%;
+  animation: bgGradientShift 15s ease infinite;
+  color: #fff;
+}
+@keyframes bgGradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+/* Keep cards slightly transparent to blend with background */
+.card {
+  background-color: rgba(20, 24, 36, 0.85) !important;
+  backdrop-filter: blur(8px);
+}
+</style>
+
+
+<style>
+/* ===== Achievement badges ===== */
+.badge-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(110px,1fr)); gap:10px; }
+.achv{
+  position: relative; padding:12px; border-radius:16px;
+  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+  border:1px solid rgba(255,255,255,.08);
+  text-align:center;
+  overflow:hidden;
+  transform: translateZ(0);
+}
+.achv .icon{ font-size:26px; line-height:1; }
+.achv .name{ margin-top:6px; font-weight:600; font-size:12px; opacity:.95; }
+.achv .tier{ font-size:11px; opacity:.8; }
+.achv.locked{ opacity:.55; filter:saturate(.4) blur(0px); }
+.achv .ring{
+  position:absolute; inset:-2px;
+  border-radius:18px;
+  border:2px solid transparent;
+  pointer-events:none;
+}
+.tier-bronze .ring{ border-color:#cd7f32; box-shadow:0 0 12px rgba(205,127,50,.35) inset; }
+.tier-silver .ring{ border-color:#c0c0c0; box-shadow:0 0 14px rgba(192,192,192,.4) inset; }
+.tier-gold .ring{ border-color:#ffd700; box-shadow:0 0 16px rgba(255,215,0,.45) inset; }
+.tier-platinum .ring{ border-color:#e5e4e2; box-shadow:0 0 18px rgba(229,228,226,.5) inset; }
+
+/* Unlock animation */
+@keyframes popIn {
+  0% { transform: scale(.8); opacity:0; }
+  60% { transform: scale(1.08); opacity:1; }
+  100% { transform: scale(1); }
+}
+.achv.unlocked { animation: popIn .5s ease; }
+
+/* Progress bar under each badge */
+.achv .bar{
+  height:6px; border-radius:6px; background:rgba(255,255,255,.12); margin-top:8px; overflow:hidden;
+}
+.achv .bar > i{ display:block; height:100%; width:0%; background:linear-gradient(90deg, rgba(255,255,255,.3), rgba(255,255,255,.7)); }
+
+/* Subtle sparkle when leveling up */
+@keyframes sparkle {
+  from { background-position:-40% 0; }
+  to   { background-position:140% 0; }
+}
+.achv.levelup .bar > i{
+  animation: sparkle 1.2s ease;
+  background: linear-gradient(90deg, rgba(255,255,255,.2), rgba(255,255,255,1), rgba(255,255,255,.2));
+  background-size: 200% 100%;
+}
+</style>
+
 </head>
 <body>
   <!-- Safe top spacer for Dynamic Island / notches -->
@@ -2702,89 +2776,20 @@ function setPrevDisabled() {
 
 <script>
 (function(){
-  class SoundEngine{
-    constructor(){
-      this.ctx = null; this.master = null;
-      this.enabled = true; this.haptics = true; this.volume = 0.6; this.unlocked = false;
-      this._bindUserUnlock();
-    }
-    _bindUserUnlock(){
-      const unlock = () => {
-        if (this.unlocked) return;
-        try{
-          this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-          this.master = this.ctx.createGain();
-          this.master.gain.value = this.volume;
-          this.master.connect(this.ctx.destination);
-          const o = this.ctx.createOscillator();
-          const g = this.ctx.createGain(); g.gain.value = 0.0001;
-          o.connect(g); g.connect(this.master); o.start(); o.stop(this.ctx.currentTime + 0.02);
-          this.unlocked = true;
-          document.removeEventListener('pointerdown', unlock, {passive:true});
-          document.removeEventListener('touchstart', unlock, {passive:true});
-        }catch(e){}
-      };
-      document.addEventListener('pointerdown', unlock, {passive:true});
-      document.addEventListener('touchstart', unlock, {passive:true});
-    }
-    setVolume(v){ this.volume = Math.max(0, Math.min(1, v)); if(this.master) this.master.gain.value = this.volume; }
-    enable(b=true){ this.enabled = b; }
-    enableHaptics(b=true){ this.haptics = b; }
-    vibrate(pattern=10){
-      if (!this.haptics) return;
-      if (navigator.vibrate) { try{ navigator.vibrate(pattern); }catch{} }
-    }
-    _osc({type='sine', freq=440, dur=0.08, start=0, gain=0.8, attack=0.002, release=0.04, pan=0}={}){
-      if(!this.unlocked || !this.enabled) return;
-      const t0 = this.ctx.currentTime + start;
-      const o  = this.ctx.createOscillator();
-      const g  = this.ctx.createGain();
-      const p  = this.ctx.createStereoPanner ? this.ctx.createStereoPanner() : null;
-      o.type = type; o.frequency.setValueAtTime(freq, t0);
-      g.gain.setValueAtTime(0, t0);
-      g.gain.linearRampToValueAtTime(gain, t0 + attack);
-      g.gain.exponentialRampToValueAtTime(0.0001, t0 + Math.max(attack, dur - release));
-      if(p){ p.pan.setValueAtTime(pan, t0); o.connect(g); g.connect(p); p.connect(this.master); } else { o.connect(g); g.connect(this.master); }
-      o.start(t0); o.stop(t0 + dur);
-    }
-    _noise({dur=0.25, start=0, cutoff=1000, q=1.2, gain=0.4}={}){
-      if(!this.unlocked || !this.enabled) return;
-      const t0 = this.ctx.currentTime + start;
-      const buffer = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * dur), this.ctx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for(let i=0;i<data.length;i++){ data[i] = (Math.random()*2 - 1) * (1 - i/data.length); }
-      const src = this.ctx.createBufferSource(); src.buffer = buffer;
-      const filt = this.ctx.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value = cutoff; filt.Q.value=q;
-      const g = this.ctx.createGain(); g.gain.setValueAtTime(gain, t0);
-      src.connect(filt); filt.connect(g); g.connect(this.master);
-      src.start(t0); src.stop(t0 + dur);
-    }
-    click(){ this._osc({type:'square', freq:560, dur:.05, gain:.35}); this.vibrate(8); }
-    hover(){ this._osc({type:'sine',   freq:320, dur:.04, gain:.22}); }
-    toggle(on=true){ this._osc({type:'triangle', freq:on?740:420, dur:.08, gain:.28}); this.vibrate(12); }
-    whoosh(){ this._noise({dur:.28, cutoff:8000, q:.6, gain:.22}); }
-    success(){ this._osc({type:'sine', freq:660, dur:.09, gain:.35}); this._osc({type:'sine', freq:880, start:.08, dur:.09, gain:.32}); this.vibrate([5,40,20]); }
-    error(){ this._osc({type:'sawtooth', freq:180, dur:.12, gain:.4}); this._osc({type:'sawtooth', freq:140, start:.08, dur:.12, gain:.32}); this.vibrate([10,30,10]); }
-    notify(){ this._osc({type:'triangle', freq:980, dur:.07, gain:.28}); }
-    start(){ this._osc({type:'triangle', freq:420, dur:.08, gain:.3}); this._osc({type:'triangle', freq:520, start:.08, dur:.08, gain:.28}); this.whoosh(); this.vibrate([8,40,8]); }
-    pause(){ this._osc({type:'square', freq:300, dur:.06, gain:.26}); this.vibrate(12); }
-    resume(){ this._osc({type:'square', freq:520, dur:.06, gain:.26}); this.vibrate(12); }
-    complete(){ this._osc({type:'sine', freq:784, dur:.11, gain:.36}); this._osc({type:'sine', freq:1046.5, start:.1, dur:.12, gain:.34}); this.vibrate([20,60,20]); }
-    tick(){ this._osc({type:'square', freq:880, dur:.025, gain:.22}); }
-    trigger(name){ if(this[name]) this[name](); }
-  }
-  const SFX = new SoundEngine(); window.SFX = SFX;
+  
+  // Disable all UI/menu sounds
+  try{  }catch(_){}
 
   function makePressable(el){
     if(el.__pressableBound) return; el.__pressableBound = true;
     el.classList.add('pressable');
     el.addEventListener('pointerenter', e=>{
       if(el.hasAttribute('disabled') || el.getAttribute('aria-disabled')==='true') return;
-      SFX.hover();
+      
     }, {passive:true});
     el.addEventListener('click', e=>{
-      if(el.hasAttribute('disabled') || el.getAttribute('aria-disabled')==='true'){ SFX.error(); return; }
-      SFX.click();
+      if(el.hasAttribute('disabled') || el.getAttribute('aria-disabled')==='true'){  return; }
+      
       const rect = el.getBoundingClientRect();
       const x = (e.clientX|| (rect.left+rect.width/2)) - rect.left;
       const y = (e.clientY|| (rect.top+rect.height/2)) - rect.top;
@@ -2815,13 +2820,13 @@ function setPrevDisabled() {
       const isValidate = /valider|ok|save|enregistrer|confirm/.test(label+idc);
       const isDelete   = /supprimer|delete|remove|trash/.test(label+idc);
       el.addEventListener('click', ()=>{
-        if(isNext || isPrev) SFX.whoosh();
-        if(isStart) SFX.start();
-        if(isStop)  SFX.complete();
-        if(isPause) SFX.pause();
-        if(isResume)SFX.resume();
-        if(isValidate) SFX.success();
-        if(isDelete) SFX.error();
+        if(isNext || isPrev) 
+        if(isStart) 
+        if(isStop)  
+        if(isPause) 
+        if(isResume)
+        if(isValidate) 
+        if(isDelete) 
       }, {passive:true});
     });
   }
@@ -2833,8 +2838,8 @@ function setPrevDisabled() {
         const t = el.textContent.trim();
         if (t !== lastText){
           lastText = t;
-          if (/^\\d{1,3}(:\\d{2})?$/.test(t)) SFX.tick();
-          if (t === '0' || t === '00:00' || t === '0:00') SFX.complete();
+          if (/^\\d{1,3}(:\\d{2})?$/.test(t)) 
+          if (t === '0' || t === '00:00' || t === '0:00') 
         }
       });
       obs.observe(el, {childList:true, characterData:true, subtree:true});
@@ -2844,14 +2849,14 @@ function setPrevDisabled() {
     document.body.classList.add('view-enter');
     requestAnimationFrame(()=>{ document.body.classList.add('view-enter-active'); });
     window.addEventListener('hashchange', ()=>{
-      SFX.whoosh();
+      
       document.body.classList.remove('view-enter','view-enter-active');
       void document.body.offsetWidth;
       document.body.classList.add('view-enter');
       requestAnimationFrame(()=> document.body.classList.add('view-enter-active'));
     });
     document.addEventListener('visibilitychange', ()=>{
-      if(document.visibilityState === 'visible'){ SFX.notify(); }
+      if(document.visibilityState === 'visible'){  }
     });
   }
   function injectSfxTuner(){
@@ -2883,14 +2888,14 @@ function setPrevDisabled() {
     const hap = panel.querySelector('#haptOn');
     const test= panel.querySelector('#sfxTest');
     const saved = JSON.parse(localStorage.getItem('sfx-prefs')||'{}');
-    if(saved.volume != null){ vol.value = saved.volume; SFX.setVolume(+saved.volume); }
-    if(saved.enabled != null){ on.checked = saved.enabled; SFX.enable(saved.enabled); }
-    if(saved.haptics != null){ hap.checked = saved.haptics; SFX.enableHaptics(saved.haptics); }
+    if(saved.volume != null){ vol.value = saved.volume;  }
+    if(saved.enabled != null){ on.checked = saved.enabled;  }
+    if(saved.haptics != null){ hap.checked = saved.haptics;  }
     const sync = ()=> localStorage.setItem('sfx-prefs', JSON.stringify({volume: +vol.value, enabled: on.checked, haptics: hap.checked}));
-    vol.addEventListener('input', ()=>{ SFX.setVolume(+vol.value); sync(); }, {passive:true});
-    on.addEventListener('change', ()=>{ SFX.enable(on.checked); sync(); }, {passive:true});
-    hap.addEventListener('change',()=>{ SFX.enableHaptics(hap.checked); sync(); }, {passive:true});
-    test.addEventListener('click', ()=>{ SFX.success(); }, {passive:true});
+    vol.addEventListener('input', ()=>{  sync(); }, {passive:true});
+    on.addEventListener('change', ()=>{  sync(); }, {passive:true});
+    hap.addEventListener('change',()=>{  sync(); }, {passive:true});
+    test.addEventListener('click', ()=>{  }, {passive:true});
   }
   const aliases = { 'timer-tick':'tick', 'timer-complete':'complete', 'validation':'success' };
   const _origTrigger = SFX.trigger.bind(SFX);
@@ -2992,7 +2997,7 @@ function setPrevDisabled() {
     e.preventDefault();
     $$('.tabs .tab').forEach(b=>{ b.classList.toggle('active', b===tab); b.setAttribute('aria-selected', b===tab?'true':'false'); });
     $$('main > section[role="region"]').forEach(sec=> sec.classList.toggle('active', sec.id===id));
-    try{ typeof SFX!=='undefined' && SFX.whoosh(); }catch(_e){}
+    try{ typeof SFX!=='undefined' &&  }catch(_e){}
   }, true);
 
   // Initial & subsequent binds
@@ -3055,7 +3060,7 @@ function setPrevDisabled() {
         const max = getMax();
         const next = dir==='prev' ? (cur===1?max:cur-1) : (cur===max?max:cur+1);
         setDaySafe(next);
-        try{ if (window.SFX) SFX.whoosh(); }catch(_){}
+        try{ if (window.SFX)  }catch(_){}
         lock();
       }, true);
     };
@@ -3151,7 +3156,7 @@ function setPrevDisabled() {
         const max = getMax();
         const newDay = dir==='prev' ? (cur===1?max:cur-1) : (cur===max?max:cur+1);
         setDaySafe(newDay);
-        try{ if (window.SFX) SFX.whoosh(); }catch(_){}
+        try{ if (window.SFX)  }catch(_){}
         lock();
       }, true);
     };
@@ -3299,5 +3304,260 @@ function setPrevDisabled() {
   else start();
 })();
 </script>
-</body>
-</html>
+
+<script>
+// ===== FINAL PATCH: Fix day vs round navigation =====
+(function(){
+  function ready(fn){ if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', fn, {once:true}); else fn(); }
+  ready(function(){
+    // 1) Disable any auto day-navigation rebinders
+    try{ window.rebindNav = function(){}; }catch{}
+    // Helper: replace node to drop old listeners, then bind our own
+    function rebindClickById(id, handler){
+      var el = document.getElementById(id);
+      if(!el) return null;
+      var clone = el.cloneNode(true);
+      el.replaceWith(clone);
+      clone.addEventListener('click', function(e){
+        e.preventDefault(); e.stopImmediatePropagation(); e.stopPropagation();
+        try{ handler(e); }catch(_){}
+      }, {passive:false});
+      return clone;
+    }
+    function getMax(){ try{ if (typeof window.PLAN_30!=='undefined' && PLAN_30 && PLAN_30.length) return PLAN_30.length; }catch(e){} return 30; }
+    function getDay(){ try{ return (typeof window.state==='object' && typeof state.currentDay==='number') ? state.currentDay : 1; }catch(e){ return 1; } }
+    function setDaySafe(n){
+      try{
+        if (typeof window.state!=='object') window.state = {};
+        var max = getMax(); var d = n;
+        if (d < 1) d = 1;
+        if (d > max) d = max;
+        state.currentDay = d;
+        if (typeof persist==='function') try{ persist(); }catch(_){}
+        if (typeof updateToday==='function') try{ updateToday(); }catch(_){}
+      }catch(_){}
+    }
+    function getRoundsForDay(day){
+      try{
+        var d = (typeof getDayData==='function') ? getDayData(day) : null;
+        if (!d) return 3;
+        return d.rounds || (d.day<=15 ? 3 : 4);
+      }catch(_){ return 3; }
+    }
+    // 2) Day buttons
+    rebindClickById('nextDayBtn', function(){
+      var cur = getDay(), max = getMax();
+      var next = (cur >= max) ? max : (cur + 1);
+      setDaySafe(next);
+    });
+    rebindClickById('prevDayBtn', function(){
+      var cur = getDay();
+      var prev = (cur <= 1) ? 1 : (cur - 1);
+      setDaySafe(prev);
+    });
+    rebindClickById('finishNextBtn', function(){
+      // Prefer built-in finish flow if available
+      try{ if (typeof finishAndNext==='function'){ finishAndNext(); return; } }catch(_){}
+      var cur = getDay(), max = getMax();
+      var next = (cur >= max) ? max : (cur + 1);
+      setDaySafe(next);
+    });
+    // 3) Round buttons (Manche)
+    function bindRound(id, delta){
+      var el = document.getElementById(id);
+      if (!el) return;
+      var clone = el.cloneNode(true);
+      el.replaceWith(clone);
+      clone.addEventListener('click', function(e){
+        e.preventDefault(); e.stopImmediatePropagation(); e.stopPropagation();
+        try{
+          if (typeof window.state!=='object') window.state = {};
+          var d = getDay();
+          var maxR = getRoundsForDay(d);
+          var curR = Math.max(1, Math.min(state.currentRound||1, maxR));
+          curR += delta;
+          if (curR < 1) curR = 1;
+          if (curR > maxR) curR = maxR;
+          state.currentRound = curR;
+          if (typeof persist==='function') try{ persist(); }catch(_){}
+          if (typeof updateToday==='function') try{ updateToday(); }catch(_){}
+        }catch(_){}
+      }, {passive:false});
+    }
+    bindRound('prevRound', -1);
+    bindRound('nextRound', +1);
+  });
+})();
+</script>
+
+
+<script>
+(function(){
+  // ===== Achievements config (push-ups/pompes based) =====
+  const ACHIEVEMENTS = [
+    { key:'pompes', icon:'💪', name:'Pompes', tiers:[
+      {tier:'bronze', threshold:500},
+      {tier:'silver', threshold:1000},
+      {tier:'gold', threshold:2500},
+      {tier:'platinum', threshold:5000}
+    ]},
+    { key:'squats', icon:'🦵', name:'Squats', tiers:[
+      {tier:'bronze', threshold:500},
+      {tier:'silver', threshold:1200},
+      {tier:'gold', threshold:3000},
+      {tier:'platinum', threshold:6000}
+    ]},
+    { key:'tractions', icon:'🧗', name:'Tractions', tiers:[
+      {tier:'bronze', threshold:200},
+      {tier:'silver', threshold:500},
+      {tier:'gold', threshold:1200},
+      {tier:'platinum', threshold:2500}
+    ]},
+    { key:'dips', icon:'🏋️', name:'Dips', tiers:[
+      {tier:'bronze', threshold:300},
+      {tier:'silver', threshold:800},
+      {tier:'gold', threshold:1800},
+      {tier:'platinum', threshold:3500}
+    ]}
+  ];
+
+  // Map French exercise names found in plans to normalized keys
+  const NAME_MAP = {
+    'pompes':'pompes',
+    'pompe':'pompes',
+    'push-up':'pompes',
+    'push ups':'pompes',
+    'squats':'squats',
+    'squat':'squats',
+    'tractions':'tractions',
+    'traction':'tractions',
+    'pull-up':'tractions',
+    'pull ups':'tractions',
+    'dips':'dips',
+    'dip':'dips'
+  };
+
+  function normalizeName(n){
+    if(!n) return null;
+    const key = (''+n).toLowerCase().trim();
+    return NAME_MAP[key]||null;
+  }
+
+  function getState(){ try{ return window.state || (window.state = {}); }catch(e){ return {}; } }
+
+  function computeTotals(){
+    const s = getState();
+    const totals = { pompes:0, squats:0, tractions:0, dips:0 };
+    try{
+      const log = s.repsLog || {};
+      // Keys are like "day:round:index"
+      Object.keys(log).forEach(k=>{
+        const reps = +log[k] || 0;
+        // We need the exercise by index at that day/round
+        const parts = k.split(':');
+        if(parts.length<3) return;
+        const day = parseInt(parts[0],10);
+        const round = parseInt(parts[1],10);
+        const idx = parseInt(parts[2],10);
+        if (!Number.isFinite(day) || !Number.isFinite(idx)) return;
+        let d = null;
+        try{ d = (typeof getDayData==='function') ? getDayData(day) : null; }catch(_){}
+        if (!d || !d.items || !Array.isArray(d.items)) return;
+        const item = d.items[idx];
+        if (!item) return;
+        const name = (Array.isArray(item)? item[0] : item && item.name) || '';
+        const key = normalizeName(name);
+        if (key && reps>0){ totals[key] = (totals[key]||0) + reps; }
+      });
+    }catch(_){}
+    return totals;
+  }
+
+  function currentTier(tiers, value){
+    let unlocked = null, next = null, progress = 0;
+    for (let i=0;i<tiers.length;i++){
+      if (value >= tiers[i].threshold) { unlocked = tiers[i]; continue; }
+      next = tiers[i];
+      break;
+    }
+    if (!next){ // at or beyond last tier
+      next = tiers[tiers.length-1];
+      progress = 1;
+    } else {
+      const prev = unlocked ? unlocked.threshold : 0;
+      const span = next.threshold - prev;
+      progress = Math.max(0, Math.min(1, (value - prev) / span));
+    }
+    return {unlocked, next, progress};
+  }
+
+  function ensureBadgesUI(){
+    const wrap = document.getElementById('badgesList');
+    if (!wrap) return null;
+    if (!wrap.classList.contains('badge-grid')) wrap.classList.add('badge-grid');
+    if (wrap.__built) return wrap;
+    wrap.__built = true;
+    wrap.innerHTML = '';
+    ACHIEVEMENTS.forEach(a=>{
+      const div = document.createElement('div');
+      div.className = 'achv locked tier-bronze';
+      div.id = 'achv-'+a.key;
+      div.innerHTML = '<div class="icon">'+a.icon+'</div><div class="name">'+a.name+'</div><div class="tier">—</div><div class="bar"><i></i></div><span class="ring"></span>';
+      wrap.appendChild(div);
+    });
+    return wrap;
+  }
+
+  function updateBadges(){
+    const wrap = ensureBadgesUI();
+    if (!wrap) return;
+    const totals = computeTotals();
+    ACHIEVEMENTS.forEach(a=>{
+      const value = totals[a.key]||0;
+      const t = currentTier(a.tiers, value);
+      const el = document.getElementById('achv-'+a.key);
+      if (!el) return;
+      const tierEl = el.querySelector('.tier');
+      const bar = el.querySelector('.bar > i');
+      bar.style.width = (t.progress*100).toFixed(1)+'%';
+      let tierName = '—';
+      el.classList.remove('tier-bronze','tier-silver','tier-gold','tier-platinum','unlocked','levelup');
+      el.classList.add('locked');
+      if (t.unlocked){
+        tierName = t.unlocked.tier.charAt(0).toUpperCase() + t.unlocked.tier.slice(1);
+        el.classList.add('tier-'+t.unlocked.tier, 'unlocked', 'levelup');
+        el.classList.remove('locked');
+      } else if (t.next){
+        tierName = '→ ' + t.next.threshold;
+      }
+      tierEl.textContent = tierName + ' • ' + value + '/' + (t.next? t.next.threshold : a.tiers[a.tiers.length-1].threshold);
+    });
+  }
+
+  // Hook into existing lifecycle
+  function hook(){
+    try{
+      if (typeof window.updateToday === 'function' && !window.updateToday.__achv){
+        const _u = window.updateToday;
+        window.updateToday = function(){
+          const r = _u.apply(this, arguments);
+          setTimeout(updateBadges, 0);
+          return r;
+        };
+        window.updateToday.__achv = true;
+      } else {
+        setTimeout(updateBadges, 0);
+      }
+    }catch(_){ setTimeout(updateBadges, 0); }
+  }
+
+  if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', hook, {once:true});
+  else hook();
+
+  // Expose for debug
+  window.__updateBadges = updateBadges;
+  window.__computeTotals = computeTotals;
+})();
+</script>
+
+</body></html>
