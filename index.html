@@ -320,6 +320,25 @@ html.theme-xfade *{
 
 /* ===== Dark mode (default, close to your original style) ===== */
 @media (prefers-color-scheme: dark){
+/* Header icon-only buttons */
+.header-icons{display:flex;gap:10px;align-items:center}
+.btn.icon.only{
+  min-width:44px;width:44px;height:44px;padding:0;border-radius:14px;
+  display:inline-flex;align-items:center;justify-content:center;
+  border:1px solid rgba(255,255,255,.10);
+  background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+  box-shadow:0 2px 0 rgba(255,255,255,.06) inset, 0 8px 16px rgba(0,0,0,.25);
+}
+.btn.icon.only svg{fill:currentColor;stroke:currentColor;stroke-width:1.5}
+.btn.icon.only:hover{transform:translateY(-1px)}
+.btn.icon.only:active{transform:translateY(0)}
+.btn.icon.primary.only{
+  border:1px solid rgba(0,122,255,.55);
+  background:linear-gradient(180deg, rgba(0,122,255,.95), rgba(0,122,255,.78));
+  color:#061021;
+  box-shadow:0 2px 0 rgba(255,255,255,.12) inset, 0 8px 22px rgba(0,122,255,.32);
+}
+
   body{ background:#0b0d12; color:#e7edf7; }
   nav{
     backdrop-filter:saturate(180%) blur(var(--ios-blur));
@@ -681,6 +700,21 @@ button[id*="day" i].active, button[class*="day" i].active {
   border-width: 1px;
 }
 
+
+@media (prefers-color-scheme: light){
+  .btn.icon.only{
+    border:1px solid rgba(0,0,0,.10)!important;
+    background:linear-gradient(180deg, rgba(255,255,255,1), rgba(255,255,255,.92))!important;
+    color:#0b0d12!important;
+    box-shadow:0 2px 0 rgba(255,255,255,.35) inset, 0 8px 20px rgba(0,0,0,.08)!important;
+  }
+  .btn.icon.primary.only{
+    border:1px solid rgba(0,122,255,.45)!important;
+    background:linear-gradient(180deg, rgba(0,122,255,1), rgba(0,122,255,.90))!important;
+    color:#fff!important;
+    box-shadow:0 2px 0 rgba(255,255,255,.35) inset, 0 8px 20px rgba(0,122,255,.28)!important;
+  }
+}
 </style>
     
 
@@ -700,6 +734,153 @@ button[id*="day" i].active, button[class*="day" i].active {
   .logo, .app-logo, .floating-logo, [data-logo], img[alt*="logo" i] { display:none !important; }
 
 </style>
+
+<!-- === REDESIGN THEME (drop-in, preserves layout/spacing) === -->
+<style id="calisfit-redesign">
+  :root{
+    --bg-0:#0b0d12; --bg-1:#0f1117; --surface:#12151d;
+    --glass:rgba(255,255,255,0.06); --glass-strong:rgba(255,255,255,0.12);
+    --txt-1:#e8ecf1; --txt-2:#b7c0cc;
+    --accent:#7dd3fc; --accent-2:#a78bfa;
+    --ok:#34d399; --warn:#f59e0b; --danger:#f87171;
+    --radius-1:14px; --radius-2:20px;
+    --shadow-1:0 6px 18px rgba(0,0,0,0.25);
+    --shadow-2:0 20px 40px rgba(0,0,0,0.35);
+    --ring:0 0 0 3px color-mix(in oklab, var(--accent) 35%, transparent);
+    --speed-fast:180ms; --speed-med:300ms; --speed-slow:600ms;
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg-0:#f7f9fc; --bg-1:#eef2f7; --surface:#ffffff;
+      --glass:rgba(0,0,0,0.04); --glass-strong:rgba(0,0,0,0.08);
+      --txt-1:#0f172a; --txt-2:#475569;
+      --shadow-1:0 6px 18px rgba(0,0,0,0.08);
+      --shadow-2:0 20px 40px rgba(0,0,0,0.12);
+      --ring:0 0 0 3px color-mix(in oklab, var(--accent) 45%, transparent);
+    }
+  }
+  body{ background: var(--bg-0); color:var(--txt-1); accent-color:var(--accent);
+        -webkit-tap-highlight-color: transparent; text-rendering:optimizeLegibility; font-synthesis-weight:none; }
+  body::before{
+    content:""; position:fixed; inset:-20vmax; z-index:-2;
+    background:
+      radial-gradient(60vmax 60vmax at 15% 20%, color-mix(in oklab, var(--accent) 24%, transparent), transparent 60%),
+      radial-gradient(70vmax 70vmax at 85% 30%, color-mix(in oklab, var(--accent-2) 22%, transparent), transparent 60%),
+      radial-gradient(80vmax 80vmax at 50% 120%, color-mix(in oklab, #22d3ee 12%, transparent), transparent 65%);
+    filter: blur(40px) saturate(110%);
+    animation: bgFloat var(--speed-slow) ease-in-out infinite alternate;
+  }
+  @keyframes bgFloat { from { transform: translate3d(0,0,0) scale(1); } to { transform: translate3d(0,-1.5%,0) scale(1.02); } }
+  body::after{ content:""; position:fixed; inset:0; z-index:-1;
+    background: linear-gradient(to bottom, rgba(0,0,0,.14), transparent 30%, rgba(0,0,0,.18)); pointer-events:none; }
+  .card, .panel, .box, .module, .sheet, section, article{
+    background: linear-gradient(180deg, color-mix(in oklab, var(--surface) 86%, transparent), color-mix(in oklab, var(--surface) 94%, transparent));
+    backdrop-filter: saturate(120%) blur(8px);
+    border:1px solid var(--glass); border-radius: var(--radius-2);
+    box-shadow: var(--shadow-1);
+    transition: transform var(--speed-med) ease, box-shadow var(--speed-med) ease, border-color var(--speed-fast) ease;
+    will-change: transform;
+  }
+  .card:hover, .panel:hover, .box:hover, .module:hover, .sheet:hover, section:hover, article:hover{
+    transform: translateY(-2px); box-shadow: var(--shadow-2); border-color: var(--glass-strong);
+  }
+  .btn, button, [role="button"], input[type="button"], input[type="submit"]{
+    appearance:none; border:0; border-radius: calc(var(--radius-1) + 4px);
+    background:
+      linear-gradient(180deg, color-mix(in oklab, var(--accent) 90%, transparent), color-mix(in oklab, var(--accent) 70%, transparent)),
+      linear-gradient(180deg, color-mix(in oklab, var(--surface) 70%, transparent), color-mix(in oklab, var(--surface) 92%, transparent));
+    color:#081016; font-weight:700; letter-spacing:.2px;
+    box-shadow: 0 1px 0 rgba(255,255,255,.25) inset, 0 8px 24px rgba(0,0,0,.25);
+    transition: transform var(--speed-fast) ease, box-shadow var(--speed-fast) ease, opacity var(--speed-fast) ease, filter var(--speed-fast) ease;
+    position:relative; overflow:hidden; cursor:pointer; outline:none;
+  }
+  .btn.secondary, button.secondary{
+    background:
+      linear-gradient(180deg, color-mix(in oklab, var(--accent-2) 90%, transparent), color-mix(in oklab, var(--accent-2) 70%, transparent)),
+      linear-gradient(180deg, color-mix(in oklab, var(--surface) 70%, transparent), color-mix(in oklab, var(--surface) 92%, transparent));
+  }
+  .btn.ok, .success{ background: linear-gradient(180deg, color-mix(in oklab, var(--ok) 90%, transparent), color-mix(in oklab, var(--ok) 70%, transparent)); color:#04110b; }
+  .btn.warn{ background: linear-gradient(180deg, color-mix(in oklab, var(--warn) 90%, transparent), color-mix(in oklab, var(--warn) 70%, transparent)); color:#110a04; }
+  .btn.danger{ background: linear-gradient(180deg, color-mix(in oklab, var(--danger) 90%, transparent), color-mix(in oklab, var(--danger) 70%, transparent)); color:#1a0505; }
+  .btn:hover, button:hover{ transform: translateY(-1px); filter: brightness(1.02); }
+  .btn:active, button:active{ transform: translateY(0); filter: brightness(.98); }
+  .btn:focus-visible, button:focus-visible{ box-shadow: var(--shadow-2), var(--ring); }
+  .btn.prev, .previous, button.prev{
+    color: var(--txt-1) !important;
+    background: linear-gradient(180deg, #1b2230, #0f1420);
+    border:1px solid color-mix(in oklab, var(--txt-1) 18%, transparent);
+  }
+  input[type="text"], input[type="number"], input[type="search"], input[type="time"], input[type="date"], textarea, select{
+    background: linear-gradient(180deg, color-mix(in oklab, var(--surface) 86%, transparent), color-mix(in oklab, var(--surface) 96%, transparent));
+    border:1px solid var(--glass); border-radius: var(--radius-1); color:var(--txt-1);
+    outline:none; box-shadow:none;
+    transition: border-color var(--speed-fast) ease, box-shadow var(--speed-fast) ease, background-color var(--speed-fast) ease;
+  }
+  input:focus, textarea:focus, select:focus{ border-color: var(--glass-strong); box-shadow: var(--ring); }
+  ::placeholder{ color: color-mix(in oklab, var(--txt-2) 70%, transparent); }
+  .tab, .pill, .chip{
+    background: linear-gradient(180deg, color-mix(in oklab, var(--surface) 70%, transparent), color-mix(in oklab, var(--surface) 95%, transparent));
+    border:1px solid var(--glass); border-radius: 999px; color:var(--txt-2);
+    transition: color var(--speed-fast) ease, border-color var(--speed-fast) ease, background var(--speed-fast) ease;
+  }
+  .tab.active, .pill.active, .chip.active{ color:var(--txt-1); border-color: var(--glass-strong); box-shadow: var(--shadow-1); }
+  table{ border-collapse:separate; border-spacing:0; overflow:hidden; border-radius: var(--radius-2); }
+  thead th{
+    background: linear-gradient(180deg, color-mix(in oklab, var(--surface) 92%, transparent), color-mix(in oklab, var(--surface) 96%, transparent));
+    color:var(--txt-2); font-weight:700; text-transform:uppercase; letter-spacing:.4px;
+    position:sticky; top:0; z-index:2; border-bottom:1px solid var(--glass-strong);
+    backdrop-filter: saturate(120%) blur(4px);
+  }
+  tbody tr{ transition: background var(--speed-fast) ease; }
+  tbody tr:hover{ background: color-mix(in oklab, var(--glass) 50%, transparent); }
+  td, th{ border-bottom:1px solid var(--glass); }
+  .reveal{ opacity:0; transform: translateY(8px); }
+  .reveal.is-in{ opacity:1; transform: none; transition: opacity var(--speed-med) ease, transform var(--speed-med) ease; }
+  .badge{ display:inline-flex; align-items:center; gap:.5ch; padding:.35em .7em; border-radius:999px; font-weight:600;
+          background: color-mix(in oklab, var(--glass) 60%, transparent); border:1px solid var(--glass); }
+  .badge.ok{ color:#0a3326; background: color-mix(in oklab, var(--ok) 25%, transparent); border-color: color-mix(in oklab, var(--ok) 45%, transparent); }
+  .badge.warn{ color:#3a2405; background: color-mix(in oklab, var(--warn) 25%, transparent); border-color: color-mix(in oklab, var(--warn) 45%, transparent); }
+  .badge.danger{ color:#3b0b0b; background: color-mix(in oklab, var(--danger) 25%, transparent); border-color: color-mix(in oklab, var(--danger) 45%, transparent); }
+  a{ color: var(--accent); text-decoration: none; } a:hover{ text-decoration: underline; }
+  @media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; scroll-behavior:auto !important; } }
+</style>
+<script>
+(function(){
+  // Ripple effect on all buttons
+  const addRipple = (btn) => {
+    const style = window.getComputedStyle(btn);
+    if (style.position === 'static') btn.style.position = 'relative';
+    btn.style.overflow = 'hidden';
+    btn.addEventListener('click', (e)=>{
+      const r = document.createElement('span');
+      const rect = btn.getBoundingClientRect();
+      const size = Math.max(rect.width, rect.height) * 1.1;
+      const x = e.clientX - rect.left - size/2;
+      const y = e.clientY - rect.top - size/2;
+      r.style.cssText = \`
+        position:absolute; left:\${x}px; top:\${y}px; width:\${size}px; height:\${size}px;
+        border-radius:50%; pointer-events:none; opacity:.25;
+        background: radial-gradient(circle at 50% 50%, #fff, transparent 55%);
+        transform: scale(.2); transition: transform 480ms ease, opacity 620ms ease;
+        mix-blend-mode: overlay; z-index:0;\`;
+      btn.appendChild(r);
+      requestAnimationFrame(()=>{ r.style.transform='scale(1)'; r.style.opacity='0'; });
+      setTimeout(()=> r.remove(), 720);
+    });
+  };
+  const ready = () => {
+    document.querySelectorAll('button, .btn, [role="button"], input[type="button"], input[type="submit"]').forEach(addRipple);
+    // Reveal observer for elements with .reveal
+    const io = new IntersectionObserver((entries)=>{
+      entries.forEach(ent => { if(ent.isIntersecting){ ent.target.classList.add('is-in'); io.unobserve(ent.target);} });
+    }, { rootMargin: '0px 0px -10% 0px', threshold:.05 });
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ready);
+  else ready();
+})();
+</script>
+<!-- === /REDESIGN THEME === -->
 </head>
 <body>
   <!-- Safe top spacer for Dynamic Island / notches -->
@@ -734,9 +915,28 @@ button[id*="day" i].active, button[class*="day" i].active {
               <div class="label">Programme actif</div>
               <div class="h1" id="todayTitle">Jour 1 · Full Body</div>
             </div>
-            <button class="btn primary" id="startSessionBtn" aria-label="Lancer la séance">▶ Lancer</button>
-            <button class="btn" id="finishNextBtn" aria-label="Terminer et passer au jour suivant">✓ Terminer & Suivant</button>
-          </div>
+            
+            <div class="header-icons" role="group" aria-label="Contrôles du jour">
+              <button class="btn icon only" id="prevDayBtn" aria-label="Jour précédent" title="Jour précédent" type="button" onclick="try{goToPrevDay&&goToPrevDay()}catch(_e){}" >
+                <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                  <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"></path>
+                </svg>
+              </button>
+              <button class="btn icon primary only" id="startSessionBtn" aria-label="Lancer la séance" title="Lancer la séance">
+                <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                  <path d="M8 5v14l11-7z"></path>
+                </svg>
+              </button>
+              <button class="btn icon only" id="finishNextBtn" aria-label="Terminer et passer au jour suivant" title="Terminer & Suivant">
+                <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                  <path d="M9 16.17L4.83 12 3.41 13.41 9 19l12-12-1.41-1.41z"></path>
+                </svg>
+                <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="margin-left:2px">
+                  <path d="M10 6l6 6-6 6"></path>
+                </svg>
+              </button>
+            </div>
+</div>
           <div class="label" style="margin-top:6px">3 cycles (30 jours × 3 mois) · Swipe ⟷ pour changer de manche</div>
           <div class="badge" id="motivation">💡 « La progression est un voyage, pas une course. »</div>
         </div>
@@ -2295,13 +2495,11 @@ function restBell(){
     const nextBtn = document.getElementById('finishNextBtn') || document.querySelector('[data-action="finish-next"]');
     if (nextBtn && nextBtn.parentElement) {
       btn = document.createElement('button');
-      btn.id = 'prevDayBtn';
-      btn.type = 'button';
-      btn.innerHTML = '⟵ Jour précédent';
-      // Try to match sizing classes if present
-      btn.className = nextBtn.className || '';
-      // If className empty, our CSS above will style it
-      nextBtn.parentElement.insertBefore(btn, nextBtn); // place before next
+      // prevDay injected via HTML; keeping legacy code guarded
+if(!document.getElementById('prevDayBtn')){
+\1
+}
+ // place before next
     } else {
       // Fallback: floating button at bottom-left
       btn = document.createElement('button');
@@ -2318,26 +2516,28 @@ function restBell(){
   }
 
   function goToPrevDay() {
-    try {
-      const min = 1;
-      if (typeof state !== 'object') window.state = {};
-      if (typeof state.currentDay !== 'number') state.currentDay = 1;
-      state.currentDay = Math.max(state.currentDay - 1, min);
-      state.currentRound = 1;
-      if (typeof persist === 'function') persist();
-      if (typeof updateToday === 'function') updateToday();
-      if (typeof activateTab === 'function') activateTab('today','tabTodayBtn');
-    } catch (e) {
-      console.warn('goToPrevDay failed:', e);
-    }
+  try {
+    const max = (typeof PLAN_30 !== 'undefined' && PLAN_30 && PLAN_30.length) ? PLAN_30.length
+              : (typeof PLAN !== 'undefined' && PLAN && PLAN.length) ? PLAN.length
+              : 30;
+    if (typeof window.state !== 'object') window.state = {};
+    if (typeof state.currentDay !== 'number') state.currentDay = 1;
+    // wrap-around: 1 -> max
+    state.currentDay = (state.currentDay > 1) ? (state.currentDay - 1) : max;
+    state.currentRound = 1;
+    if (typeof persist === 'function') persist();
+    if (typeof updateToday === 'function') updateToday();
+    if (typeof activateTab === 'function') activateTab('today','tabTodayBtn');
+  } catch (e) {
+    console.warn('goToPrevDay failed:', e);
   }
-
-  function setPrevDisabled() {
-    const btn = document.getElementById('prevDayBtn');
-    if (!btn) return;
-    const isFirst = (typeof state?.currentDay === 'number' ? state.currentDay : 1) <= 1;
-    btn.disabled = !!isFirst;
-  }
+}
+function setPrevDisabled() {
+  const btn = document.getElementById('prevDayBtn');
+  if (!btn) return;
+  // With wrap-around enabled, the previous button is never disabled
+  btn.disabled = false;
+}
 
   function bindPrev() {
     const btn = ensurePrevButton();
@@ -2393,5 +2593,74 @@ function restBell(){
 })();
 </script>
 <!-- ==== /Injected Prev Button ==== -->
+
+<script>
+// Robust click binding for prev-day button (works across re-renders)
+document.addEventListener('click', function(e){
+  var el = e.target.closest && e.target.closest('#prevDayBtn');
+  if(el){ e.preventDefault(); try{ if(typeof goToPrevDay==='function') goToPrevDay(); }catch(_e){} }
+}, true);
+</script>
+
+
+<script id="prev-day-fix">
+(function(){
+  function getMaxDay(){
+    try{
+      if (typeof window.PLAN_30 !== "undefined" && window.PLAN_30 && window.PLAN_30.length) return window.PLAN_30.length;
+      if (typeof window.PLAN !== "undefined" && window.PLAN && window.PLAN.length) return window.PLAN.length;
+    }catch(e){}
+    return 30;
+  }
+  function getCurrentDay(){
+    try{
+      if (typeof window.state === "object" && typeof window.state.currentDay === "number") return window.state.currentDay;
+      var t = document.getElementById("todayTitle");
+      if (t && t.textContent){
+        var m = t.textContent.match(/Jour\s+(\d+)/i);
+        if (m) return parseInt(m[1],10);
+      }
+    }catch(e){}
+    return 1;
+  }
+  function setCurrentDay(n){
+    if (typeof window.state !== "object") window.state = {};
+    window.state.currentDay = n;
+    try{ if (typeof window.persist === "function") window.persist(); }catch(e){}
+    try{ if (typeof window.updateToday === "function") window.updateToday(); }catch(e){}
+    try{ if (typeof window.activateTab === "function") window.activateTab('today','tabTodayBtn'); }catch(e){}
+  }
+  function goPrev(){
+    var max = getMaxDay();
+    var d = getCurrentDay();
+    d = (d > 1) ? (d - 1) : max; // wrap to last
+    setCurrentDay(d);
+  }
+  // Expose as the official handler (overrides any earlier definition)
+  window.goToPrevDay = goPrev;
+
+  function bind(){
+    var btn = document.getElementById('prevDayBtn');
+    if (!btn) return;
+    if (!btn.__prevFixBound){
+      btn.type = 'button';
+      btn.removeAttribute('disabled');
+      btn.addEventListener('click', function(ev){
+        ev.preventDefault(); ev.stopPropagation();
+        goPrev();
+      });
+      btn.__prevFixBound = true;
+    }
+  }
+  // bind now and re-bind on DOM changes (in case header is re-rendered)
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bind, {once:true});
+  } else {
+    bind();
+  }
+  new MutationObserver(function(){ bind(); }).observe(document.documentElement, {childList:true, subtree:true});
+})();
+</script>
+
 </body>
 </html>
