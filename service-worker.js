@@ -1,51 +1,71 @@
 
-const CACHE_NAME = 'calisfit-v1-00';
-const PRECACHE_URLS = [
+// CalisFit PWA — Service Worker (vanilla)
+const CACHE_NAME = 'calisfit-v1';
+const CORE_ASSETS = [
   './',
   './index.html',
-  './manifest.webmanifest',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
-  './icons/apple-touch-icon-180.png'
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png',
+  './apple-touch-icon-180.png',
+  './offline.html'
 ];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(PRECACHE_URLS)));
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(CORE_ASSETS))
+  );
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.map(k => k !== CACHE_NAME ? caches.delete(k) : null)))
+    caches.keys().then((keys) =>
+      Promise.all(keys.map((k) => (k !== CACHE_NAME ? caches.delete(k) : null)))
+    )
   );
   self.clients.claim();
 });
 
+// Strategy:
+// - HTML navigations: network-first (fallback to cache, then offline page)
+// - Other GET requests: cache-first (fallback to network)
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   const url = new URL(req.url);
+
   // Only handle GET
   if (req.method !== 'GET') return;
-  // For navigation, serve index.html (SPA style)
-  if (req.mode === 'navigate') {
-    event.respondWith(fetch(req).catch(() => caches.match('./index.html')));
+
+  // HTML navigations
+  if (req.mode === 'navigate' || (req.headers.get('accept') || '').includes('text/html')) {
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          const copy = res.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put('./index.html', copy));
+          return res;
+        })
+        .catch(async () => {
+          const cache = await caches.open(CACHE_NAME);
+          const cached = await cache.match('./index.html');
+          return cached || cache.match('./offline.html');
+        })
+    );
     return;
   }
-  // Cache-first for our precached assets
-  if (PRECACHE_URLS.some(p => url.pathname.endsWith(p.replace('./','/')))) {
-    event.respondWith(caches.match(req).then(res => res || fetch(req)));
-    return;
-  }
-  // Stale-while-revalidate for others
+
+  // Other assets: cache-first
   event.respondWith(
-    caches.open(CACHE_NAME).then(cache => 
-      cache.match(req).then(res => {
-        const fetchPromise = fetch(req).then(networkRes => {
-          if (networkRes && networkRes.status === 200) cache.put(req, networkRes.clone());
-          return networkRes;
-        }).catch(() => res);
-        return res || fetchPromise;
-      })
-    )
+    caches.match(req).then((cached) => {
+      if (cached) return cached;
+      return fetch(req)
+        .then((res) => {
+          const copy = res.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
+          return res;
+        })
+        .catch(() => caches.match('./offline.html'));
+    })
   );
 });
