@@ -1344,6 +1344,16 @@ a:hover{ text-decoration:underline; color:var(--accent-2); }
 </div>
 </div>
 </div>
+
+<div class="card" id="trainingVideoCard">
+  <div class="row" style="margin-bottom:6px">
+    <div class="h2">Vidéo d'entraînement</div>
+  </div>
+  <video id="trainingVideo" controls preload="metadata" style="width:100%;border-radius:12px;outline:none">
+    <source src="assets/training.mp4" type="video/mp4">
+    Votre navigateur ne supporte pas la lecture vidéo.
+  </video>
+</div>
 <div class="card">
 <div class="row" style="margin-bottom:8px"><div class="h2">Jours &amp; exercices</div>
 <div class="badge" id="daysCount">30 jours</div></div>
@@ -1568,9 +1578,9 @@ a:hover{ text-decoration:underline; color:var(--accent-2); }
     'Side Plank':{fr:'Planche latérale',setup:'Épaule sur coude.',cues:'Hanche haute.',errors:'Épaule écrasée.'},
     'Side Plank Reach':{fr:'Planche latérale rotation',setup:'Ajoute rotation.',cues:'Contrôle.',errors:'Chute hanche.'},
     'L-Sit':{fr:'L‑Sit',setup:'Appui mains.',cues:'Épaules basses.',errors:'Dos arrondi.'},
-    'Hollow Hold':{fr:'Gainage hollow',setup:'Dos plaqué.',cues:'Côtes rentrées.',errors:'Dos décolle.'},
-    'Hollow Crunch':{fr:'Crunch hollow',setup:'Dynamique.',cues:'Bas du dos plaqué.',errors:'Tirer la nuque.'},
-    'V-ups':{fr:'V‑ups',setup:'Mains/pieds se rejoignent.',cues:'Explosif.',errors:'Dos claque.'},
+    'Hollow Hold':{fr:'Gainage creux',setup:'Dos plaqué.',cues:'Côtes rentrées.',errors:'Dos décolle.'},
+    'Hollow Crunch':{fr:'Crunch creux',setup:'Dynamique.',cues:'Bas du dos plaqué.',errors:'Tirer la nuque.'},
+    'V-ups':{fr:'Relevés en V',setup:'Mains/pieds se rejoignent.',cues:'Explosif.',errors:'Dos claque.'},
     'Leg Raises':{fr:'Relevés de jambes',setup:'Allongé/suspendu.',cues:'Dos plaqué.',errors:'Balançoire.'},
     'Hanging Knee Raises':{fr:'Relevés de genoux pendu',setup:'Suspendu.',cues:'Contrôle.',errors:'Balançoire.'},
     'Hanging Leg Raises':{fr:'Relevés de jambes pendu',setup:'Suspendu.',cues:'Rétroversion.',errors:'Dos creusé.'},
@@ -1578,10 +1588,10 @@ a:hover{ text-decoration:underline; color:var(--accent-2); }
     'Windshield Wipers':{fr:'Essuie‑glaces au sol',setup:'Allongé.',cues:'Épaules collées.',errors:'Arrachage épaules.'},
     'Mountain Climber':{fr:'Mountain climber',setup:'Planche.',cues:'Rythme constant.',errors:'Bassin saute.'},
     'Toes to Bar':{fr:'Orteils à la barre',setup:'Suspendu.',cues:'Creux/bosse.',errors:'Élan anarchique.'},
-    'Handstand Push-ups':{fr:'Pompes en équilibre (HSPU)',setup:'Mur ok.',cues:'Gainage.',errors:'Cambrure.'},
+    'Handstand Push-ups':{fr:'Pompes en équilibre au mur',setup:'Mur ok.',cues:'Gainage.',errors:'Cambrure.'},
     'Wall HSPU':{fr:'Pompes en équilibre au mur',setup:'Pieds au mur.',cues:'Amplitude contrôlée.',errors:'Cervicales.'},
-    'Muscle-up (prog)':{fr:'Muscle‑up (progression)',setup:'Tirage explosif.',cues:'Transition rapide.',errors:'Coudes derrière.'},
-    'Front Lever (tuck)':{fr:'Front lever (tuck)',setup:'Épaules basses.',cues:'Rétroversion bassin.',errors:'Épaules montées.'},
+    'Muscle-up (prog)':{fr:'Muscle-up (progression)',setup:'Tirage explosif.',cues:'Transition rapide.',errors:'Coudes derrière.'},
+    'Front Lever (tuck)':{fr:'Front lever (groupé)',setup:'Épaules basses.',cues:'Rétroversion bassin.',errors:'Épaules montées.'},
     'Planche Push-up (prog)':{fr:'Pompes planche (progression)',setup:'Épaules devant poignets.',cues:'Protraction.',errors:'Coudes évasés.'},
     'Shuttle Runs':{fr:'Allers‑retours sprint',setup:'Marques au sol.',cues:'Demi‑tour bas.',errors:'Talons lourds.'},
     'Step-up':{fr:'Montées sur banc',setup:'Pied entier sur appui.',cues:'Pousse le talon.',errors:'Genou rentre.'},
@@ -1649,78 +1659,78 @@ a:hover{ text-decoration:underline; color:var(--accent-2); }
 
   const PLAN_30=[
     {day:1,title:'Full Body',rounds:3,items:[
-      ['Push-ups','20'],['Squats','20'],['Pike Push-up','10'],['Inverted Row','20'],['Lateral Lunges','10/side'],['Chair Dips','10']
+      ['Pompes','20'],['Squats','20'],['Pompes pike','10'],['Rowing inversé','20'],['Fentes latérales','10/side'],['Dips sur chaise','10']
     ]},
     {day:2,title:'Upper/Lower + Core',rounds:3,items:[
-      ['Dive Bomber Push-ups','15'],['Chin-ups','AMRAP'],['Reverse Lunge','10/side'],['Shoulder Tap','20'],['Reverse Crunches','20'],['Step-up','10/side']
+      ['Pompes plongeur','15'],['Tractions supination','AMRAP'],['Reverse Lunge','10/side'],['Shoulder Tap','20'],['Crunch inversé','20'],['Montées sur banc','10/side']
     ]},
     {day:3,title:'Pull • Core • Legs',rounds:3,items:[
-      ['Squats','20'],['Pull-ups','AMRAP'],['Diamond Push-ups','20'],['Windshield Wipers','10/side'],['Curtsy Lunges','10/side'],['Bird Dog','5/side']
+      ['Squats','20'],['Tractions pronation','AMRAP'],['Pompes diamant','20'],['Essuie‑glaces au sol','10/side'],['Fentes croisées','10/side'],['Bird dog','5/side']
     ]},
     {day:4,title:'OFF / Récup',rounds:0,items:[]},
     {day:5,title:'Mix explosif',rounds:3,items:[
-      ['Squat Jump','10'],['Push-ups','20'],['Superman Pull','10'],['Chin-ups','AMRAP'],['Wall HSPU','10'],['Hollow Crunch','10']
+      ['Squat sauté','10'],['Pompes','20'],['Tirage superman','10'],['Tractions supination','AMRAP'],['Pompes en équilibre au mur','10'],['Crunch creux','10']
     ]},
     {day:6,title:'Push/Pull + Core',rounds:3,items:[
-      ['Inverted Row','10'],['Archer Push-up','10/side'],['Reverse Lunge','10/side'],['Bar Dips','10'],['Mountain Climber','20s'],['Hanging Knee Raises','10']
+      ['Rowing inversé','10'],['Pompes archer','10/side'],['Reverse Lunge','10/side'],['Dips barres parallèles','10'],['Mountain climber','20s'],['Relevés de genoux pendu','10']
     ]},
     {day:7,title:'OFF / Récup',rounds:0,items:[]},
     {day:8,title:'Core & Stability',rounds:3,items:[
-      ['Burpees','10'],['Floor IYT','10'],['Wide Arm Push-up','10'],['L-Sit','Hold'],['Step-up','10'],['Calf Raises','20'],['Plank','45-60s'],['Side Plank','20s/side']
+      ['Burpees','10'],['Élévations I‑Y‑T au sol','10'],['Pompes larges','10'],['L-Sit','Hold'],['Montées sur banc','10'],['Extensions mollets','20'],['Planche','45-60s'],['Planche latérale','20s/side']
     ]},
     {day:9,title:'Push/Pull Mix',rounds:3,items:[
-      ['Inverted Row','10'],['Decline Push-up','10'],['Bulgarian Split Squat','5/side'],['Chin-ups','10'],['Bird Dog Plank','5/side'],['Bar Dips','10'],['Pike Push-up','10'],['Leg Raises','10']
+      ['Rowing inversé','10'],['Pompes déclinées','10'],['Fentes bulgares','5/side'],['Tractions supination','10'],['Planche bird dog','5/side'],['Dips barres parallèles','10'],['Pompes pike','10'],['Leg Raises','10']
     ]},
     {day:10,title:'Legs · Push · Core',rounds:3,items:[
-      ['Squat Jump','10'],['Archer Push-up','10/side'],['Reverse Lunge','10/side'],['Single-Leg Tuck-up','10/side'],['Lateral Lunges','10/side'],['Mountain Climber','20s'],['Hanging Knee Raises','10'],['Diamond Push-ups','10']
+      ['Squat sauté','10'],['Pompes archer','10/side'],['Reverse Lunge','10/side'],['Tuck-up une jambe','10/side'],['Fentes latérales','10/side'],['Mountain climber','20s'],['Relevés de genoux pendu','10'],['Pompes diamant','10']
     ]},
     {day:11,title:'OFF / Récup',rounds:0,items:[]},
     {day:12,title:'Skills & Legs',rounds:3,items:[
-      ['Wall HSPU','10'],['Shuttle Runs','20s'],['Pseudo Planche','10'],['Pistol Squat','8-10/side'],['Burpees','10'],['Hanging Leg Raises','10'],['Mountain Climber','20s'],['One-leg RDL','8-10/side']
+      ['Pompes en équilibre au mur','10'],['Shuttle Runs','20s'],['Pseudo Planche','10'],['Pistol Squat','8-10/side'],['Burpees','10'],['Relevés de jambes pendu','10'],['Mountain climber','20s'],['One-leg RDL','8-10/side']
     ]},
     {day:13,title:'Hamstrings & Pull',rounds:3,items:[
-      ['Back & Forth Lunges','10'],['Dead Bug','10'],['Nordic Curl','10'],['Bird Dog Plank','20'],['Pull-ups','6+'],['Dragon Flag','6-10'],['Shoulder Tap','15-20s'],['Plank','1:00']
+      ['Fentes avant/arrière','10'],['Dead bug','10'],['Nordic Curl','10'],['Planche bird dog','20'],['Tractions pronation','6+'],['Dragon Flag','6-10'],['Shoulder Tap','15-20s'],['Planche','1:00']
     ]},
     {day:14,title:'OFF / Récup',rounds:0,items:[]},
     {day:15,title:'Plyo + Pull',rounds:4,items:[
-      ['In & Out Jump','10'],['Clap Push-up','10'],['L Pull-ups','10'],['Bar Dips','10'],['Dragon Flag','6-8'],['Side Plank Reach','20s'],['Chin-ups','8-12'],['Archer Push-up','6-8/side']
+      ['Sauts in‑out','10'],['Pompes claquées','10'],['Tractions en L','10'],['Dips barres parallèles','10'],['Dragon Flag','6-8'],['Side Plank Reach','20s'],['Tractions supination','8-12'],['Pompes archer','6-8/side']
     ]},
     {day:16,title:'Skills Focus',rounds:4,items:[
-      ['Toes to Bar','10'],['Skater Squat','10/side'],['Muscle-up (prog)','10'],['Planche Push-up (prog)','10'],['Hollow Hold','15s'],['Single-Leg Hamstring Bridge','10/side'],['Triangle Push-up','10'],['Side Plank','15s/side']
+      ['Orteils à la barre','10'],['Squat patineur','10/side'],['Muscle-up (progression)','10'],['Planche Push-up (prog)','10'],['Gainage creux','15s'],['Single-Leg Hamstring Bridge','10/side'],['Pompes serrées','10'],['Planche latérale','15s/side']
     ]},
     {day:17,title:'Mixed Strength',rounds:4,items:[
-      ['Back & Forth Lunges','10'],['Inverted Row','10'],['Pike Push-up','10'],['Squats','20'],['Dragon Flag','6-10'],['Shoulder Tap','15-20s'],['Mountain Climber','20s'],['Plank','1:00']
+      ['Fentes avant/arrière','10'],['Rowing inversé','10'],['Pompes pike','10'],['Squats','20'],['Dragon Flag','6-10'],['Shoulder Tap','15-20s'],['Mountain climber','20s'],['Planche','1:00']
     ]},
     {day:18,title:'OFF / Récup',rounds:0,items:[]},
     {day:19,title:'Pull & Posterior',rounds:4,items:[
-      ['Chin-ups','10'],['Archer Push-up','10/side'],['Front Lever (tuck)','AMRAP'],['One-leg RDL','5/side'],['Superman Pull','10'],['Curtsy Lunges','10'],['Toes to Bar','10'],['SL Elevated Bridge','10']
+      ['Tractions supination','10'],['Pompes archer','10/side'],['Front lever (groupé)','AMRAP'],['One-leg RDL','5/side'],['Tirage superman','10'],['Fentes croisées','10'],['Orteils à la barre','10'],['Pont surélevé une jambe','10']
     ]},
     {day:20,title:'HSPU & Core',rounds:4,items:[
-      ['Pike Push-up','10'],['Back & Forth Lunges','10/side'],['Handstand Push-ups','AMRAP'],['Inverted Row','10'],['V-ups','10'],['Bar Dips','10'],['Skater Squat','10'],['Single-Leg Tuck-up','10']
+      ['Pompes pike','10'],['Fentes avant/arrière','10/side'],['Pompes en équilibre au mur','AMRAP'],['Rowing inversé','10'],['Relevés en V','10'],['Dips barres parallèles','10'],['Squat patineur','10'],['Tuck-up une jambe','10']
     ]},
     {day:21,title:'OFF / Récup',rounds:0,items:[]},
     {day:22,title:'Skills + Legs',rounds:4,items:[
-      ['Toes to Bar','10'],['Sissy Squats','10'],['Muscle-up (prog)','AMRAP'],['Planche Push-up (prog)','10'],['Pistol Squat','10/side'],['Dragon Flag','AMRAP'],['Triangle Push-up','10'],['Plank','60s']
+      ['Orteils à la barre','10'],['Sissy Squats','10'],['Muscle-up (progression)','AMRAP'],['Planche Push-up (prog)','10'],['Pistol Squat','10/side'],['Dragon Flag','AMRAP'],['Pompes serrées','10'],['Planche','60s']
     ]},
     {day:23,title:'Plyo + Split Legs',rounds:4,items:[
-      ['In & Out Jump','10'],['Clap Push-up','10'],['L Pull-ups','10'],['Bulgarian Split Squat','10/side'],['Hanging Knee Raises','10'],['Knee Outside Elbow','10/side'],['Elevated Inverted Rows','8-12'],['Glute Kickback','10/side']
+      ['Sauts in‑out','10'],['Pompes claquées','10'],['Tractions en L','10'],['Fentes bulgares','10/side'],['Relevés de genoux pendu','10'],['Genou à l’extérieur du coude','10/side'],['Rowing inversé surélevé','8-12'],['Extension hanche quadrupédie','10/side']
     ]},
     {day:24,title:'Mixed + Core',rounds:4,items:[
-      ['Squat Jump','10'],['Pull-ups','10'],['Pike Push-up','10'],['Sissy Squats','20'],['Dragon Flag','6-10'],['Shoulder Tap','20s'],['Mountain Climber','20s'],['Hanging Wipers','10/side']
+      ['Squat sauté','10'],['Tractions pronation','10'],['Pompes pike','10'],['Sissy Squats','20'],['Dragon Flag','6-10'],['Shoulder Tap','20s'],['Mountain climber','20s'],['Essuie‑glaces pendu','10/side']
     ]},
     {day:25,title:'OFF / Récup',rounds:0,items:[]},
     {day:26,title:'Push Skills',rounds:4,items:[
-      ['Dive Bomber Push-ups','10'],['Muscle-up (prog)','10'],['Triangle Push-up','10'],['One-leg RDL','10/side'],['Hollow Crunch','10'],['Skater Squat','10/side'],['Toes to Bar','10'],['Bird Dog','10/side']
+      ['Pompes plongeur','10'],['Muscle-up (progression)','10'],['Pompes serrées','10'],['One-leg RDL','10/side'],['Crunch creux','10'],['Squat patineur','10/side'],['Orteils à la barre','10'],['Bird dog','10/side']
     ]},
     {day:27,title:'Front Lever + Pistols',rounds:4,items:[
-      ['Back & Forth Lunges','10'],['Front Lever (tuck)','10'],['Bar Dips','10'],['Pistol Squat','20'],['Pull-ups','6+'],['Dragon Flag','6-10'],['Shoulder Tap','20s'],['Plank','1:00']
+      ['Fentes avant/arrière','10'],['Front lever (groupé)','10'],['Dips barres parallèles','10'],['Pistol Squat','20'],['Tractions pronation','6+'],['Dragon Flag','6-10'],['Shoulder Tap','20s'],['Planche','1:00']
     ]},
     {day:28,title:'OFF / Récup',rounds:0,items:[]},
     {day:29,title:'Full Mix Advanced',rounds:4,items:[
-      ['Burpees','10'],['Pull-ups','10'],['V-ups','10'],['Muscle-up (prog)','10'],['Sissy Squats','10'],['Handstand Push-ups','10'],['Hanging Knee Raises','15'],['Bird Dog','10/side']
+      ['Burpees','10'],['Tractions pronation','10'],['Relevés en V','10'],['Muscle-up (progression)','10'],['Sissy Squats','10'],['Pompes en équilibre au mur','10'],['Relevés de genoux pendu','15'],['Bird dog','10/side']
     ]},
     {day:30,title:'Finale',rounds:4,items:[
-      ['In & Out Jump','10'],['Clap Push-up','10'],['L Pull-ups','10'],['Bulgarian Split Squat','10/side'],['Knee to Elbow','10'],['Knee Inside Elbow','10/side'],['Inverted Row','8-12'],['SL Elevated Bridge','10/side']
+      ['Sauts in‑out','10'],['Pompes claquées','10'],['Tractions en L','10'],['Fentes bulgares','10/side'],['Genou à coude','10'],['Genou à l’intérieur du coude','10/side'],['Rowing inversé','8-12'],['Pont surélevé une jambe','10/side']
     ]}
   ];
 
@@ -3842,7 +3852,7 @@ function setPrevDisabled() {
 
 // === CF REAL CALENDAR (fixed; Synced start: 11 Aug 2025) ===
 (function(){
-  const START_ISO = localStorage.getItem('cf-start-date') || '2025-08-11';
+  const START_ISO = localStorage.getItem('cf-start-date') || '2025-08-12';
   const CYCLE = 30;
   const DONE_KEY = 'cf-done-days'; // store finished ISO dates
 
@@ -3871,7 +3881,7 @@ function setPrevDisabled() {
     const m1 = String(+m); const d1 = String(+d);
     return [
       `${y}-${m1}-${d1}`,            // e.g. 2025-8-11
-      `${y}-${m}-${d}`,              // e.g. 2025-08-11
+      `${y}-${m}-${d}`,              // e.g. 2025-08-12
       `d${y}-${m1}-${d1}`            // legacy prefixed key
     ];
   }
@@ -4131,7 +4141,7 @@ function setPrevDisabled() {
 <script>
 // CF REAL CALENDAR v2 — synced with real dates & training cycle
 (function(){
-  const START_ISO = (localStorage.getItem('cf-start-date') || '2025-08-11');
+  const START_ISO = (localStorage.getItem('cf-start-date') || '2025-08-12');
   const startDate = fromISO(START_ISO);
 
   const calRoot = document.getElementById('calendar');
@@ -4407,4 +4417,81 @@ function setPrevDisabled() {
 </script>
 <!-- ===================================================================== -->
 
+
+<!-- === Start Date Selector (Settings) ================================= -->
+<script>
+(function(){
+  const KEY = 'cf-start-date';
+  function pad(n){ return String(n).padStart(2,'0'); }
+  function todayISO(d=new Date()){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+  function getCurrentISO(){ return localStorage.getItem(KEY) || '2025-08-12'; }
+
+  function mount(){
+    var settings = document.querySelector('#tab-settings');
+    if(!settings){ return; }
+
+    // Create a new card
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = ''
+      + '<div class="h2">Date de début du cycle</div>'
+      + '<div class="row" style="margin-top:8px;gap:8px;align-items:center;flex-wrap:wrap">'
+      + '  <input id="cfStartDate" type="date" aria-label="Date de début du cycle"'
+      + '         style="padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:#0e1322;color:#fff">'
+      + '  <button class="btn" id="cfStartSave">Enregistrer</button>'
+      + '  <button class="btn ghost" id="cfStartToday">Aujourd\'hui</button>'
+      + '</div>'
+      + '<div class="label" id="cfStartHelp" style="margin-top:6px">'
+      + 'Jour 1 est calculé à partir de cette date. Un rechargement applique partout (calendrier, Jour du programme, badges).'
+      + '</div>';
+    settings.appendChild(card);
+
+    var input = card.querySelector('#cfStartDate');
+    var save  = card.querySelector('#cfStartSave');
+    var today = card.querySelector('#cfStartToday');
+
+    // Prefill
+    input.value = getCurrentISO();
+
+    today.addEventListener('click', function(){
+      input.value = todayISO();
+    });
+
+    save.addEventListener('click', function(){
+      var iso = String(input.value||'').trim();
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)){
+        alert('Date invalide. Utilise le format AAAA-MM-JJ.');
+        return;
+      }
+      try {
+        localStorage.setItem(KEY, iso);
+        // Try to update "today" view immediately while we reload
+        if (typeof window.updateToday === 'function'){
+          // Recompute program day index for *current* date with the new start date
+          var parts = iso.split('-').map(function(x){ return parseInt(x,10); });
+          var start = new Date(parts[0], parts[1]-1, parts[2]);
+          function dayStart(d){ var x=new Date(d); x.setHours(0,0,0,0); return x; }
+          function dayDiff(a,b){ var ms=86400000; return Math.floor((dayStart(a)-dayStart(b))/ms); }
+          var diff = dayDiff(new Date(), start);
+          var idx = ((diff % 30) + 30) % 30; // 0..29
+          if (typeof window.state !== 'object') window.state = {};
+          window.state.currentDay = idx + 1; // 1..30
+          try { updateToday(); } catch(_){}
+        }
+      } catch (e) {
+        console.warn('Impossible d\'enregistrer cf-start-date:', e);
+      }
+      // Full refresh to ensure all modules pick up the new START_ISO
+      setTimeout(function(){ location.reload(); }, 200);
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', mount, {once:true});
+  } else {
+    mount();
+  }
+})();
+</script>
+<!-- === /Start Date Selector =========================================== -->
 </body></html>
