@@ -4494,4 +4494,270 @@ function setPrevDisabled() {
 })();
 </script>
 <!-- === /Start Date Selector =========================================== -->
-</body></html>
+
+<!-- === Multi‑Programme Enhancer (Calis + Basket) === -->
+<script>
+(function(){
+  // ---- Extend state ----
+  const storeLS={ load(){try{return JSON.parse(localStorage.getItem('calisfit'))||{};}catch{return {};}},
+                  save(x){ localStorage.setItem('calisfit', JSON.stringify(x)); } };
+  if(!window.state){
+    // Fallback (shouldn't happen). Create minimal state so we don't crash.
+    window.state = { currentDay:1,currentRound:1, completed:{}, repsLog:{}, totals:{}, settings:{}, starts:{}, history:[], free:[], skills:{}, xp:0 };
+  }
+  if(!state.programId){ state.programId = 'calis'; }
+  if(!state.starts){ state.starts = {}; }
+  if(!state.difficulty){ state.difficulty = 'medium'; }
+  if(!state.options && state.settings){ // map legacy settings
+    state.options = { beep: state.settings.beep!==false, haptics: state.settings.haptics!==false, contrast: !!state.settings.contrast, textlg: !!state.settings.textLg, theme: 'dark' };
+  }
+  // ---- Program definitions ----
+  const PROGRAMS = {
+    calis: { id:'calis', name:'Calisthénie · 30 jours', get days(){ return (typeof PLAN_30!=='undefined' && Array.isArray(PLAN_30)) ? PLAN_30 : []; } },
+    basket: { id:'basket', name:'Basket · Prépa physique & Skills (30 jours)', days: [
+      {day:1,title:'Base & Ball‑handling',rounds:3,items:[['Jog + mobilités','5:00'],['Stationary dribble (D/G)','30s/side'],['Cross/Between/Behind combo','10/side'],['Mikan drill','20'],['Form shooting (proche)','25'],['Squats','20'],['Pompes','15'],['Planche','45s']]},
+      {day:2,title:'Sprints & Finitions',rounds:3,items:[['Sprints demi‑terrain','6'],['Layups main forte','20'],['Layups main faible','20'],['Floaters au cône','12'],['Defensive slides (Z)','4 x 20m'],['Fentes','10/side'],['Mollets','20'],['Planche latérale','20s/side']]},
+      {day:3,title:'Tir en mouvement',rounds:3,items:[['Jog + dynamiques','5:00'],['Catch‑and‑shoot (5 spots)','5 x 5'],['1‑dribble pull‑up (D/G)','10/side'],['Tirs en course (angles)','12'],['Récup ballon + closeout','10'],['Rowing inversé','12'],['Gainage creux','20s'],['Étirements courts','2:00']]},
+      {day:4,title:'OFF / Récup',rounds:0,items:[]},
+      {day:5,title:'Pieds & vitesse',rounds:3,items:[['Échelle agilité (ladder)','3 patterns x 20s'],['Cones in‑out + cross','10'],['Slides + sprint (1/2 terrain)','6'],['Shuttle runs','6 x 10m'],['Pompes','20'],['Squat sauté','10'],['Core rotation (ballon)','12/side'],['Respiration','2:00']]},
+      {day:6,title:'Finishing package',rounds:3,items:[['Euro‑step des 2 côtés','12'],['Reverse layup','12'],['Pro‑hop','12'],['Mikan alterné','20'],['Tirs sous contact (élastique/partenaire)','12'],['Fentes bulgares','8/side'],['Mollets','20'],['Planche','45s']]},
+      {day:7,title:'OFF / Récup',rounds:0,items:[]},
+      {day:8,title:'Handling avancé',rounds:3,items:[['2‑ball dribble (sync)','3 x 30s'],['2‑ball alt + cross','3 x 30s'],['Change de rythme (walking→sprint)','6 x 10m'],['Hésitation + tir','10'],['Floater zone élbow','12'],['Pompes diamant','12'],['Fentes croisées','10/side'],['Gainage latéral','20s/side']]},
+      {day:9,title:'Défense & closeouts',rounds:3,items:[['Slides + closeout au cône','12'],['Shell drill 2‑2 (si possible)','6 x 20s'],['Main active (déflexions)','30s'],['Contest sans faute','10'],['Sprints ligne de fond','6'],['Squats','20'],['Hip hinge (RDL au poids du corps)','10/side'],['Planche oiseau','10/side']]},
+      {day:10,title:'Tir à 3 pts (forme)',rounds:3,items:[['Form shooting (mi‑distance)','30'],['Step‑back court','10/side'],['Catch‑and‑shoot 3 pts','5 x 5'],['1‑dribble pull‑up 3 pts','10'],['Mouvements sans ballon','5 x 15s'],['Pompes pike','12'],['Mollets','25'],['Étirements courts','2:00']]},
+      {day:11,title:'OFF / Récup',rounds:0,items:[]},
+      {day:12,title:'Transitions',rounds:3,items:[['Full‑court layups (aller/retour)','8'],['Change main en course','10/side'],['Trailer 3 pts','10'],['Euro‑step en vitesse','10'],['Rebonds + sortie de balle','8'],['Squat patineur','10/side'],['Dips','10'],['Core anti‑rotation','10/side']]},
+      {day:13,title:'Hanche & sauts',rounds:3,items:[['Pogos','3 x 20s'],['Approach jumps (1/2 pas)','3 x 6'],['Box step‑up explosif','8/side'],['Contre‑mouvement + tir','10'],['Slides résistés (élastique)','4 x 15s'],['Nordic curl (assiste)','6'],['Dragon flag prog.','6-10'],['Planche','1:00']]},
+      {day:14,title:'OFF / Récup',rounds:0,items:[]},
+      {day:15,title:'Pick‑and‑roll reads',rounds:4,items:[['Snake + pull‑up','8/side'],['Reject + floater','8/side'],['Split + layup','8/side'],['Kick‑out passe en course','10'],['Closeout + 1‑dribble','10'],['Pompes','20'],['Squat sauté','10'],['Gainage creux','20s']]},
+      {day:16,title:'Force du haut',rounds:4,items:[['Tractions (ou tirage)','AMRAP'],['Pompes archer','8/side'],['Pompes serrées','12'],['Rowing inversé','10'],['Overhead hold (ballon)','3 x 20s'],['Planche latérale','20s/side'],['Bird dog','10/side'],['Étirements','2:00']]},
+      {day:17,title:'Lecture & tir',rounds:4,items:[['Stop‑and‑pop en transition','10'],['Step‑through + tir','10'],['Catch→attaque→kick','10'],['Footwork hop/punch','10'],['Cones: cross→pull‑up','10'],['Fentes','12/side'],['Mollets','25'],['Planche','45s']]},
+      {day:18,title:'OFF / Récup',rounds:0,items:[]},
+      {day:19,title:'Press & sorties',rounds:4,items:[['Escape dribble + pivot','10/side'],['Press break 2 cônes','6 x 20m'],['Passe baseball','10'],['Finition contact','12'],['Sprints “17s”','2'],['RDL 1 jambe','8/side'],['Squats','20'],['Core anti‑extension','20s']]},
+      {day:20,title:'Combo scoring',rounds:4,items:[['Cross→between→pull‑up','10/side'],['Spin move + tir','10/side'],['Floater main faible','12'],['Catch‑and‑shoot 3 pts','5 x 5'],['Corner 3 + cut','10'],['Pompes pike','12'],['Fentes latérales','10/side'],['Planche','1:00']]},
+      {day:21,title:'OFF / Récup',rounds:0,items:[]},
+      {day:22,title:'Jeu de jambes',rounds:4,items:[['Échelle: in‑in‑out‑out','3 x 20s'],['Stutter + drive','10/side'],['Dir. change 2 cônes','10'],['Pull‑up après recul','10'],['Catch & go','10'],['Mollets','30'],['Squat patineur','10/side'],['Gainage latéral','20s/side']]},
+      {day:23,title:'Conditionnement',rounds:4,items:[['Suicides','3'],['Shuttle 5‑10‑5','4'],['Full‑court sprints','8'],['Defensive slides (longs)','4 x 20m'],['Burpees','10'],['Dips','10'],['Fentes bulgares','8/side'],['Respiration','2:00']]},
+      {day:24,title:'Lecture écran',rounds:4,items:[['Off‑ball screen → tir','10'],['Curl/Fade/Pop (choix)','12'],['Flare + passe','10'],['Re‑screen + drive','10'],['Closeout → extra pass','10'],['Rowing inversé','12'],['Pompes','20'],['Planche','1:00']]},
+      {day:25,title:'OFF / Récup',rounds:0,items:[]},
+      {day:26,title:'Finitions avancées',rounds:4,items:[['Inside‑hand finish','12'],['Same‑foot same‑hand','12'],['Reverse “up & under”','10'],['Euro → floater','10'],['Contact + and‑1 (mou simulé)','10'],['Squats','20'],['Mollets','30'],['Core rotation','12/side']]},
+      {day:27,title:'3 pts sous fatigue',rounds:4,items:[['Shuttle + 3 pts','5 x 4'],['Corner → wing → top','3 x 5'],['Transition 3','12'],['Step‑back 3','10'],['Free‑throws (fatigue)','20'],['Pompes','20'],['Squat sauté','10'],['Planche','1:00']]},
+      {day:28,title:'OFF / Récup',rounds:0,items:[]},
+      {day:29,title:'Game simulation',rounds:4,items:[['Cycle 3 actions (drive, tir, passe)','6'],['Pick‑and‑roll lecture','8'],['Closeout + extra pass + tir','10'],['Finition contact','12'],['Full‑court sprint','6'],['Tractions ou tirage','AMRAP'],['Fentes','12/side'],['Gainage','1:00']]},
+      {day:30,title:'Finale test',rounds:4,items:[['3‑cone dribble test','3'],['Tirs 5 spots','5 x 5'],['Layups alternés 60s','AMRAP'],['Shuttle 5‑10‑5','4'],['Suicides','2'],['Pompes','AMRAP'],['Squats','30'],['Free‑throws','20']]}
+    ] }
+  };
+  function activeProgram(){ return PROGRAMS[state.programId] || PROGRAMS.calis; }
+  function getMaxDay(){ const p=activeProgram(); return (p && p.days && p.days.length)||30; }
+
+  // ---- Per‑program start date helpers ----
+  function todayISO(d=new Date()){ const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),da=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${da}`; }
+  function dayStart(d){ const x=new Date(d); x.setHours(0,0,0,0); return x; }
+  function dayDiff(a,b){ return Math.floor((dayStart(a)-dayStart(b))/86400000); }
+  function keyForStart(){ return 'cf-start-date:'+state.programId; }
+  function getStartISO(){ return state.starts[state.programId] || localStorage.getItem(keyForStart()) || todayISO(); }
+  function setStartISO(iso){ state.starts[state.programId]=iso; localStorage.setItem(keyForStart(), iso); storeLS.save(state); }
+
+  function programDayFor(date){
+    const start = getStartISO();
+    let idx = dayDiff(date, new Date(start)); if(idx<0) idx=0;
+    const max = getMaxDay(); const cyc = ((idx % max)+max)%max;
+    return cyc + 1;
+  }
+
+  // ---- Override getDayData/updateToday/buildDaysList/buildCalendar ----
+  window.getDayData = function(d){
+    const plan = activeProgram().days;
+    for(let i=0;i<plan.length;i++) if(plan[i].day===d) return plan[i];
+    return plan[0] || {day:1,title:'',rounds:3,items:[]};
+  };
+
+  const _updateTodayOrig = window.updateToday;
+  window.updateToday = function(){
+    // clamp
+    const max = getMaxDay();
+    if(!state._booted){ state.currentDay = Math.min(max, Math.max(1, state.currentDay||1)); state._booted=true; }
+    const d = getDayData(state.currentDay);
+    const progName = activeProgram().name;
+    const titleEl = document.querySelector('#todayTitle');
+    if(titleEl) titleEl.textContent = `Jour ${d.day} · ${d.title} (${progName})`;
+    const badgeEl = document.querySelector('#todayBadge');
+    if(badgeEl) badgeEl.textContent = `Semaine ${Math.ceil(d.day/7)} • Jour ${d.day}`;
+    const rounds = d.rounds || (d.day<=15?3:4);
+    state.currentRound = Math.min(Math.max(1,state.currentRound||1), rounds);
+    const roundChip = document.querySelector('#roundChip'); if(roundChip){ roundChip.textContent = `Manche ${state.currentRound}/${rounds}`; }
+
+    const list=document.querySelector('#workoutList'); if(!list) return;
+    list.innerHTML='';
+    d.items.forEach(([name,target],idx)=>{
+      const keyPref = `${state.programId}:${d.day}:${state.currentRound}:${idx}`;
+      const legacyKey = `${d.day}:${state.currentRound}:${idx}`;
+      const reps = (state.repsLog[keyPref] ?? (state.programId==='calis' ? state.repsLog[legacyKey] : 0)) || 0;
+      const done = !!(state.completed[keyPref] ?? (state.programId==='calis' ? state.completed[legacyKey] : false));
+      const row = document.createElement('div');
+      row.className = 'workout-item'+(done?' done':'');
+      const scaled = (typeof scaleTargetText==='function') ? scaleTargetText(target, (window.DIFF_FACT?.[state.difficulty]||1)) : target;
+      row.innerHTML = `<div><div class="h2">${name}</div><div class="label">Cible: ${scaled}</div></div>
+                       <div class="row" style="gap:8px">
+                         <span class="pill" aria-live="polite">${reps} reps</span>
+                         <div class="row">
+                           <button class="btn" data-act="-">−</button>
+                           <button class="btn" data-act="+">+</button>
+                         </div>
+                         <button class="btn" data-done>✔</button>
+                       </div>`;
+      row.querySelectorAll('[data-act]').forEach(b=>b.addEventListener('click', ()=>{
+        const k = `${state.programId}:${d.day}:${state.currentRound}:${idx}`;
+        let v = state.repsLog[k]||0; v += (b.dataset.act==='+')?1:-1; v=Math.max(0,v); state.repsLog[k]=v; storeLS.save(state); window.updateStats && updateStats();
+        window.updateToday();
+      }));
+      row.querySelector('[data-done]').addEventListener('click', ()=>{
+        const k = `${state.programId}:${d.day}:${state.currentRound}:${idx}`;
+        state.completed[k] = !state.completed[k];
+        if (state.completed[k]){ state.totals.sessions=(state.totals.sessions||0)+1; state.totals.streak=(state.totals.streak||0)+1; state.totals.bestStreak=Math.max(state.totals.bestStreak||0,state.totals.streak||0); state.xp = (state.xp||0)+5; }
+        storeLS.save(state); window.updateStats && updateStats(); window.updateToday();
+      });
+      list.appendChild(row);
+    });
+  };
+
+  window.buildDaysList = function(){
+    const host=document.querySelector('#daysList'); if(!host) return;
+    host.innerHTML='';
+    const plan = activeProgram().days || [];
+    plan.forEach(d=>{
+      const rounds = d.rounds || (d.day<=15?3:4);
+      const card = document.createElement('div'); card.className='workout-item';
+      card.innerHTML = `<div><div class="h2">Jour ${d.day} · ${d.title}</div><div class="label">${rounds} manches • ${d.items.length} exos</div></div>
+                        <div class="row"><button class="btn" data-go="${d.day}">Aller</button></div>`;
+      card.querySelector('[data-go]').addEventListener('click', ()=>{
+        state.currentDay = d.day; state.currentRound=1; storeLS.save(state);
+        if(typeof activateTab==='function') activateTab('tab-today','tabTodayBtn');
+        window.updateToday();
+      });
+      host.appendChild(card);
+    });
+    const cnt=document.querySelector('#daysCount'); if(cnt) cnt.textContent = `${plan.length} jours`;
+  };
+
+  window.buildCalendar = function(){
+    const host = document.querySelector('#calendar'); if(!host) return;
+    host.innerHTML='';
+    const header = document.createElement('div');
+    header.className='cf-cal-header';
+    header.innerHTML = `<button class="btn" id="cfPrevYear">« Année</button>
+                        <div class="h2" id="cfTitle">—</div>
+                        <div class="row" style="gap:6px">
+                          <button class="btn" id="cfPrevMonth">‹ Mois</button>
+                          <button class="btn" id="cfTodayBtn">Aujourd'hui</button>
+                          <button class="btn" id="cfNextMonth">Mois ›</button>
+                        </div>`;
+    host.appendChild(header);
+    const dow = document.createElement('div'); dow.className='cf-cal-dow'; dow.style.display='grid'; dow.style.gridTemplateColumns='repeat(7,1fr)';
+    'Lun Mar Mer Jeu Ven Sam Dim'.split(' ').forEach(s=>{ const d=document.createElement('div'); d.className='label'; d.style.textAlign='center'; d.textContent=s; dow.appendChild(d);});
+    host.appendChild(dow);
+    const grid = document.createElement('div'); grid.className='cf-cal-grid'; host.appendChild(grid);
+    const view = {y:new Date().getFullYear(), m:new Date().getMonth()};
+    function render(){
+      const ref = new Date(view.y, view.m, 1);
+      document.querySelector('#cfTitle').textContent = ref.toLocaleDateString('fr-CH',{month:'long', year:'numeric'});
+      grid.innerHTML='';
+      const first = new Date(view.y, view.m, 1);
+      const leading = (first.getDay()+6)%7;
+      const daysInMonth = new Date(view.y, view.m+1, 0).getDate();
+      const todayIso = todayISO(new Date());
+      const addCell=(date,out)=>{
+        const el=document.createElement('div'); el.className='cf-day'; if(out) el.style.opacity='.45';
+        const iso=todayISO(date); if(iso===todayIso) el.classList.add('today');
+        const pd = programDayFor(date);
+        const data = getDayData(pd);
+        const isRest = (data.items||[]).length===0 || /off|repos|récup/i.test(data.title||'');
+        el.classList.add(isRest?'rest':'work');
+        el.dataset.programDay=String(pd);
+        el.textContent=String(date.getDate());
+        el.addEventListener('click', ()=>{
+          state.currentDay = pd; state.currentRound=1; storeLS.save(state); window.updateToday();
+          grid.querySelectorAll('.cf-day').forEach(x=>x.classList.remove('selected')); el.classList.add('selected');
+          const chip=document.querySelector('#cfSelected'); if(chip) chip.textContent = `Sélection: ${iso} → Jour ${pd}`;
+        });
+        grid.appendChild(el);
+      };
+      for(let i=0;i<leading;i++){ addCell(new Date(view.y, view.m, 1-(leading-i)), true); }
+      for(let d=1; d<=daysInMonth; d++){ addCell(new Date(view.y, view.m, d), false); }
+    }
+    document.getElementById('cfPrevMonth').onclick=()=>{ view.m--; if(view.m<0){view.m=11; view.y--;} render(); };
+    document.getElementById('cfNextMonth').onclick=()=>{ view.m++; if(view.m>11){view.m=0; view.y++;} render(); };
+    document.getElementById('cfPrevYear').onclick=()=>{ view.y--; render(); };
+    document.getElementById('cfTodayBtn').onclick=()=>{ const now=new Date(); view.y=now.getFullYear(); view.m=now.getMonth(); render(); state.currentDay=programDayFor(new Date()); window.updateToday(); };
+    render();
+  };
+
+  // ---- Inject program selector & start date cards in Settings ----
+  function injectProgramSettings(){
+    const tab = document.querySelector('#tab-settings');
+    if(!tab || document.getElementById('programSelect')) return; // already injected
+    // Program card
+    const card = document.createElement('div'); card.className='card';
+    card.innerHTML = `<div class="h2">Programme</div>
+                      <div class="row" style="gap:8px;margin-top:8px">
+                        <select id="programSelect" aria-label="Choisir le programme"></select>
+                      </div>
+                      <div class="label">Le changement s’applique immédiatement (Aujourd’hui, Programmes, Calendrier, Stats).</div>`;
+    tab.appendChild(card);
+    const sel = card.querySelector('#programSelect');
+    Object.values(PROGRAMS).forEach(p=>{ const o=document.createElement('option'); o.value=p.id; o.textContent=p.name; sel.appendChild(o); });
+    sel.value = state.programId;
+    sel.addEventListener('change', ()=>{
+      state.programId = sel.value; state.currentDay = Math.min(state.currentDay||1, getMaxDay()); storeLS.save(state);
+      window.buildDaysList(); window.buildCalendar(); window.updateToday();
+    });
+
+    // Start date card
+    const card2 = document.createElement('div'); card2.className='card';
+    card2.innerHTML = `<div class="h2">Date de début (spécifique au programme)</div>
+      <div class="row" style="gap:8px;margin-top:8px;flex-wrap:wrap">
+        <input id="startDateInput" type="date" aria-label="Date de début"/>
+        <button class="btn" id="startDateSave">Enregistrer</button>
+        <button class="btn ghost" id="startDateToday">Aujourd'hui</button>
+      </div>
+      <div class="label">Jour 1 est calculé à partir de cette date.</div>`;
+    tab.appendChild(card2);
+    const inp = card2.querySelector('#startDateInput'); inp.value = getStartISO();
+    card2.querySelector('#startDateSave').addEventListener('click', ()=>{ const iso=inp.value; if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return alert('Date invalide'); setStartISO(iso); state.currentDay = programDayFor(new Date()); storeLS.save(state); window.buildCalendar(); window.updateToday(); });
+    card2.querySelector('#startDateToday').addEventListener('click', ()=>{ inp.value = todayISO(); });
+  }
+
+  // ---- Boot: override renders after app init ----
+  function safe(fn){ try{ fn(); }catch(e){ console.warn('[multi-program] error:', e); } }
+  document.addEventListener('DOMContentLoaded', ()=>{
+    injectProgramSettings();
+    // Re-render with new overrides
+    safe(window.buildDaysList); safe(window.buildCalendar); safe(window.updateToday);
+  });
+})();
+</script>
+
+
+<!-- === Multi‑programme: fix long titles layout === -->
+<style>
+  /* Keep left column flexible and right controls fixed width */
+  .workout-item{ align-items:flex-start; }
+  .workout-item > div:first-child{ flex:1; min-width:0; }
+  .workout-item > div:first-child .h2{
+    font-size:16px; line-height:1.25;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+    word-break:break-word;
+  }
+  .workout-item > div:first-child .label{
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;
+  }
+  .workout-item > div:last-child{ flex:0 0 auto; display:flex; align-items:center; gap:8px; }
+  /* Tighten controls on small devices */
+  @media (max-width: 480px){
+    .workout-item .btn{ padding:6px 9px; }
+    .workout-item .pill{ font-size:12px; padding:4px 8px; }
+    .workout-item > div:first-child .h2{ font-size:15px; }
+  }
+</style>
+</body>
+</html>
